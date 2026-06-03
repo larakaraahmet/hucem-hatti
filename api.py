@@ -1266,5 +1266,17 @@ def get_goal_timing(
 def ntfy_test():
     """NTFY_TOPIC değerini döner ve test bildirimi gönderir."""
     topic = _NTFY_TOPIC or "(boş)"
-    _ntfy("🧪 Test", f"ntfy çalışıyor! topic={topic}")
-    return {"ntfy_topic": topic, "sent": bool(_NTFY_TOPIC)}
+    error = None
+    try:
+        req = urllib.request.Request(
+            f"https://ntfy.sh/{topic}",
+            data="ntfy test mesajı".encode(),
+            headers={"Title": "🧪 Test", "Priority": "default"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            status = resp.status
+    except Exception as e:
+        error = str(e)
+        status = None
+    return {"ntfy_topic": topic, "http_status": status, "error": error}
