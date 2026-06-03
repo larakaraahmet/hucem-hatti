@@ -1,0 +1,16 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    - cron: "*/14 * * * *"   # Her 14 dakikada bir
+  workflow_dispatch:           # Elle de tetiklenebilir
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API
+        run: |
+          curl -s -o /dev/null -w "HTTP %{http_code}" \
+            "https://hucem-hatti.onrender.com/players/search?q=ping"
+          echo " — $(date)"

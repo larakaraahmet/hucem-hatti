@@ -34,11 +34,35 @@ DATABASE_URL = os.getenv(
 
 _engine: Engine | None = None
 
+# ---------------------------------------------------------------------------
+# ntfy bildirimi — ziyaretçi aramasında telefona bildirim gönderir
+# NTFY_TOPIC env var ile konfigüre edilir (örn: hucem-hatti-xyz123)
+# ---------------------------------------------------------------------------
+_NTFY_TOPIC = os.getenv("NTFY_TOPIC", "")
+_last_notif_search: str = ""   # aynı sorguyu tekrar bildirme
+
+
+def _ntfy(baslik: str, mesaj: str) -> None:
+    """ntfy.sh üzerinden push bildirim gönderir. Hata olursa sessizce geçer."""
+    if not _NTFY_TOPIC:
+        return
+    try:
+        req = urllib.request.Request(
+            f"https://ntfy.sh/{_NTFY_TOPIC}",
+            data=mesaj.encode(),
+            headers={"Title": baslik, "Priority": "default", "Tags": "soccer"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=3)
+    except Exception:
+        pass
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _engine
     _engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_size=5, max_overflow=10)
+    _ntfy("⚽ Hücem Hattı açıldı", "API sunucusu başlatıldı.")
     yield
     if _engine:
         _engine.dispose()
@@ -526,6 +550,11 @@ def search_players(
     q: str = Query(min_length=2, description="Aranacak oyuncu adı"),
     engine: Engine = Depends(get_engine),
 ):
+    global _last_notif_search
+    # "ping" sorgusunu bildir­me (keepalive pingleri için)
+    if q.lower() != "ping" and q != _last_notif_search:
+        _last_notif_search = q
+        _ntfy("🔍 Arama yapıldı", f'"{q}" arandı')
     with engine.connect() as conn:
         rows = conn.execute(text("""
             SELECT id AS oyuncu_id, isim, mevki, milliyet
