@@ -17,7 +17,11 @@ from sqlalchemy import Engine, create_engine, text
 
 from metrics import get_player_metrics
 from similarity import find_similar_players
-from insights import generate_insight_for_player
+try:
+    from insights import generate_insight_for_player
+    _insights_available = True
+except ImportError:
+    _insights_available = False
 from ingest_openfootball import h2h_compute
 
 DATABASE_URL = os.getenv(
@@ -985,6 +989,8 @@ def get_player_insight(
     min_minutes: int = Query(default=90, ge=1, description="Minimum oynanan dakika"),
     engine:      Engine = Depends(get_engine),
 ):
+    if not _insights_available:
+        raise HTTPException(status_code=503, detail="AI içgörüsü bu sunucuda aktif değil.")
     try:
         result = generate_insight_for_player(player_id, engine, min_minutes=min_minutes)
     except ValueError as e:
