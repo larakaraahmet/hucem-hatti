@@ -575,12 +575,7 @@ def search_players(
 )
 def get_stats_leaders(engine: Engine = Depends(get_engine)):
     """Çeşitli metriklerde lider oyuncuları döner (WC2026 ticker'ı için)."""
-    import time
-    global _last_visit_time
-    now = time.time()
-    if now - _last_visit_time > 120:  # 2 dakikada bir bildir
-        _last_visit_time = now
-        _ntfy("👀 Ziyaretçi var!", "Biri siteye girdi")
+    _ntfy("Ziyaretci!", "Biri siteye girdi")
     _SQL = """
     WITH totals AS (
         SELECT
