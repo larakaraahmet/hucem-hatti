@@ -271,15 +271,13 @@ class DBWriter:
                          mac_sayisi, dakika,
                          gol, asist, np_gol,
                          xg, xa, npxg,
-                         sut, isabetli_sut,
-                         sari_kart, kirmizi_kart)
+                         sut, isabetli_sut)
                     VALUES
                         (:pid, :lig, :sezon, :kaynak,
                          :mac, :dak,
                          :gol, :asist, :npgol,
                          :xg, :xa, :npxg,
-                         :sut, :isabetli,
-                         :sari, :kirmizi)
+                         :sut, :isabetli)
                     ON CONFLICT (oyuncu_id, sezon, lig) DO UPDATE SET
                         kaynak       = EXCLUDED.kaynak,
                         mac_sayisi   = COALESCE(EXCLUDED.mac_sayisi,   player_external_stats.mac_sayisi),
@@ -291,9 +289,7 @@ class DBWriter:
                         xa           = COALESCE(EXCLUDED.xa,           player_external_stats.xa),
                         npxg         = COALESCE(EXCLUDED.npxg,         player_external_stats.npxg),
                         sut          = COALESCE(EXCLUDED.sut,          player_external_stats.sut),
-                        isabetli_sut = COALESCE(EXCLUDED.isabetli_sut, player_external_stats.isabetli_sut),
-                        sari_kart    = COALESCE(EXCLUDED.sari_kart,    player_external_stats.sari_kart),
-                        kirmizi_kart = COALESCE(EXCLUDED.kirmizi_kart, player_external_stats.kirmizi_kart)
+                        isabetli_sut = COALESCE(EXCLUDED.isabetli_sut, player_external_stats.isabetli_sut)
                 """), {
                     "pid":      pid,
                     "lig":      lig_db,
@@ -309,8 +305,6 @@ class DBWriter:
                     "npxg":     round(rec.npxg, 4) if rec.npxg is not None else None,
                     "sut":      rec.sut,
                     "isabetli": rec.isabetli_sut,
-                    "sari":     rec.sari_kart,
-                    "kirmizi":  rec.kirmizi_kart,
                 })
                 conn.execute(text("RELEASE SAVEPOINT sp_pstat"))
                 inserted += 1
