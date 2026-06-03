@@ -1,0 +1,22 @@
+statsbombpy>=1.0.3
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+pandas>=2.0
+numpy>=1.26
+scikit-learn>=1.4
+tqdm>=4.66
+fastapi>=0.111
+uvicorn[standard]>=0.29
+anthropic>=0.40
+
+# ── Yeni veri kaynakları ───────────────────────────────────────────────
+socceraction>=1.4.0
+soccerdata>=0.6.0
+requests>=2.31
+beautifulsoup4>=4.12
+lxml>=5.0
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.23   # fuzzywuzzy hız artırımı
+pytz>=2024.1               # TR timezone
+aiohttp>=3.9               # understat async
+python-dotenv>=1.0         # .env dosyasından ortam değişkeni okuma
