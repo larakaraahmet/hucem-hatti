@@ -40,6 +40,7 @@ _engine: Engine | None = None
 # ---------------------------------------------------------------------------
 _NTFY_TOPIC = os.getenv("NTFY_TOPIC", "")
 _last_notif_search: str = ""   # aynı sorguyu tekrar bildirme
+_last_visit_time: float = 0.0  # son ziyaret bildirimi zamanı (rate-limit)
 
 
 def _ntfy(baslik: str, mesaj: str) -> None:
@@ -572,6 +573,12 @@ def search_players(
 )
 def get_stats_leaders(engine: Engine = Depends(get_engine)):
     """Çeşitli metriklerde lider oyuncuları döner (WC2026 ticker'ı için)."""
+    import time
+    global _last_visit_time
+    now = time.time()
+    if now - _last_visit_time > 120:  # 2 dakikada bir bildir
+        _last_visit_time = now
+        _ntfy("👀 Ziyaretçi var!", "Biri siteye girdi")
     _SQL = """
     WITH totals AS (
         SELECT
