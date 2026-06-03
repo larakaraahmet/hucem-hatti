@@ -48,10 +48,12 @@ def _ntfy(baslik: str, mesaj: str) -> None:
     if not _NTFY_TOPIC:
         return
     try:
+        # Emoji ve Türkçe karakter içeren başlığı body'ye göm
+        payload = f"{baslik}: {mesaj}".encode("utf-8")
         req = urllib.request.Request(
             f"https://ntfy.sh/{_NTFY_TOPIC}",
-            data=mesaj.encode(),
-            headers={"Title": baslik, "Priority": "default", "Tags": "soccer"},
+            data=payload,
+            headers={"Content-Type": "text/plain; charset=utf-8"},
             method="POST",
         )
         urllib.request.urlopen(req, timeout=3)
@@ -1266,17 +1268,5 @@ def get_goal_timing(
 def ntfy_test():
     """NTFY_TOPIC değerini döner ve test bildirimi gönderir."""
     topic = _NTFY_TOPIC or "(boş)"
-    error = None
-    try:
-        req = urllib.request.Request(
-            f"https://ntfy.sh/{topic}",
-            data="ntfy test mesajı".encode(),
-            headers={"Title": "🧪 Test", "Priority": "default"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            status = resp.status
-    except Exception as e:
-        error = str(e)
-        status = None
-    return {"ntfy_topic": topic, "http_status": status, "error": error}
+    _ntfy("Test", "Hucem Hatti ntfy calisiyor!")
+    return {"ntfy_topic": topic, "sent": bool(topic)}
