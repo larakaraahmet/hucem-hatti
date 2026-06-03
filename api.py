@@ -1260,3 +1260,11 @@ def get_goal_timing(
             "gec_pct":   round(gec   / toplam * 100, 1) if toplam else 0,
         },
     }
+
+
+@app.get("/ntfy-test", summary="ntfy bağlantısını test eder")
+def ntfy_test():
+    """NTFY_TOPIC değerini döner ve test bildirimi gönderir."""
+    topic = _NTFY_TOPIC or "(boş)"
+    _ntfy("🧪 Test", f"ntfy çalışıyor! topic={topic}")
+    return {"ntfy_topic": topic, "sent": bool(_NTFY_TOPIC)}
