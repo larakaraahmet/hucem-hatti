@@ -277,6 +277,7 @@ def _metrics_or_404(player_id: int, engine: Engine) -> dict:
 def get_player_profile(player_id: int, engine: Engine = Depends(get_engine)):
     base    = _fetch_player_base(player_id, engine)
     metrics = _metrics_or_404(player_id, engine)
+    _ntfy("Oyuncu goruntulendi", f"{base.get('isim', str(player_id))}")
 
     # Kulüp takımı ve ligi bul
     club_takim = club_lig = None
