@@ -1,8 +1,10 @@
 /**
  * FixtureList — WC2026 fikstür takvimi
- * /fixtures endpoint'inden veri çeker, tarihe göre gruplar.
+ * - TR saati gösterimi (Europe/Istanbul, tarih_tr API'den geliyor)
+ * - Her maç için canlı geri sayım
+ * - Takım adına tıklayınca oyuncu kadrosu açılır
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api } from "../services/api.js";
 import H2HPanel from "./H2HPanel.jsx";
 
@@ -13,39 +15,67 @@ const GRP_COLOR = {
 };
 
 const FLAGS = {
-  // İngilizce
-  "Argentina":"🇦🇷","Australia":"🇦🇺","Belgium":"🇧🇪","Brazil":"🇧🇷",
-  "Canada":"🇨🇦","Chile":"🇨🇱","China":"🇨🇳","Colombia":"🇨🇴",
-  "Croatia":"🇭🇷","Denmark":"🇩🇰","Ecuador":"🇪🇨","England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "France":"🇫🇷","Germany":"🇩🇪","Hungary":"🇭🇺","Iran":"🇮🇷",
-  "Iraq":"🇮🇶","Ireland":"🇮🇪","Italy":"🇮🇹","Japan":"🇯🇵",
-  "Kazakhstan":"🇰🇿","Mexico":"🇲🇽","Morocco":"🇲🇦","Netherlands":"🇳🇱",
-  "New Zealand":"🇳🇿","Nigeria":"🇳🇬","Panama":"🇵🇦","Poland":"🇵🇱",
-  "Portugal":"🇵🇹","Romania":"🇷🇴","Saudi Arabia":"🇸🇦","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  "Senegal":"🇸🇳","Serbia":"🇷🇸","Slovenia":"🇸🇮","South Africa":"🇿🇦",
-  "South Korea":"🇰🇷","Spain":"🇪🇸","Switzerland":"🇨🇭","Turkey":"🇹🇷",
-  "Ukraine":"🇺🇦","United States":"🇺🇸","Uruguay":"🇺🇾","Venezuela":"🇻🇪",
-  "Algeria":"🇩🇿","Cameroon":"🇨🇲","Bolivia":"🇧🇴","Finland":"🇫🇮",
-  // Türkçe
+  // Türkçe isimler (API'den gelenler)
   "ABD":"🇺🇸","Almanya":"🇩🇪","Arjantin":"🇦🇷","Avustralya":"🇦🇺",
-  "Avusturya":"🇦🇹","Belçika":"🇧🇪","Bolivya":"🇧🇴","Brezilya":"🇧🇷",
-  "Cezayir":"🇩🇿","Çin":"🇨🇳","Danimarka":"🇩🇰","Ekvador":"🇪🇨",
-  "Fas":"🇲🇦","Finlandiya":"🇫🇮","Fransa":"🇫🇷","Güney Afrika":"🇿🇦",
-  "Güney Kore":"🇰🇷","Hollanda":"🇳🇱","Hırvatistan":"🇭🇷","Irak":"🇮🇶",
-  "İngiltere":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","İran":"🇮🇷","İrlanda":"🇮🇪","İskoçya":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  "İspanya":"🇪🇸","İsviçre":"🇨🇭","İtalya":"🇮🇹","Japonya":"🇯🇵",
-  "Kamerun":"🇨🇲","Kanada":"🇨🇦","Kazakistan":"🇰🇿","Kolombiya":"🇨🇴",
-  "Meksika":"🇲🇽","Mısır":"🇪🇬","Nijerya":"🇳🇬",
-  "Polonya":"🇵🇱","Portekiz":"🇵🇹","S. Arabistan":"🇸🇦",
-  "Slovenya":"🇸🇮","Sırbistan":"🇷🇸","Şili":"🇨🇱","Türkiye":"🇹🇷",
-  "Ukrayna":"🇺🇦","Yeni Zelanda":"🇳🇿",
-  "Arnavutluk":"🇦🇱","Gürcistan":"🇬🇪","Macaristan":"🇭🇺","Romanya":"🇷🇴",
+  "Avusturya":"🇦🇹","Belçika":"🇧🇪","Brezilya":"🇧🇷",
+  "Cezayir":"🇩🇿","Çekya":"🇨🇿","Ekvador":"🇪🇨",
+  "Fas":"🇲🇦","Fransa":"🇫🇷","Gana":"🇬🇭","Güney Afrika":"🇿🇦",
+  "G.Kore":"🇰🇷","Güney Kore":"🇰🇷","Hollanda":"🇳🇱","Hırvatistan":"🇭🇷",
+  "Irak":"🇮🇶","İngiltere":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","İran":"🇮🇷","İskoçya":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+  "İspanya":"🇪🇸","İsviçre":"🇨🇭","İsveç":"🇸🇪","Japonya":"🇯🇵",
+  "Kanada":"🇨🇦","Katar":"🇶🇦","Kolombiya":"🇨🇴","Kongo":"🇨🇩",
+  "Meksika":"🇲🇽","Mısır":"🇪🇬","Norveç":"🇳🇴",
+  "Panama":"🇵🇦","Paraguay":"🇵🇾","Portekiz":"🇵🇹",
+  "S. Arabistan":"🇸🇦","Senegal":"🇸🇳","Tunus":"🇹🇳","Türkiye":"🇹🇷",
+  "Uruguay":"🇺🇾","Ürdün":"🇯🇴","Yeni Zelanda":"🇳🇿",
+  "Özbekistan":"🇺🇿","Curaçao":"🇨🇼","Fildişi Sahili":"🇨🇮",
+  "Haiti":"🇭🇹","İsveç":"🇸🇪","Yeşil Burun":"🇨🇻",
+  "Bosna Hersek":"🇧🇦","İskoçya":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Çekya":"🇨🇿",
+  "Kongo DR":"🇨🇩","Kongo D.C.":"🇨🇩",
+  // İngilizce isimler
+  "Algeria":"🇩🇿","Argentina":"🇦🇷","Australia":"🇦🇺","Austria":"🇦🇹",
+  "Belgium":"🇧🇪","Bosnia and Herzegovina":"🇧🇦","Brazil":"🇧🇷",
+  "Canada":"🇨🇦","Cape Verde Islands":"🇨🇻","Colombia":"🇨🇴",
+  "Congo DR":"🇨🇩","Croatia":"🇭🇷","Curaçao":"🇨🇼",
+  "Czech Republic":"🇨🇿","Ecuador":"🇪🇨","Egypt":"🇪🇬",
+  "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","France":"🇫🇷","Germany":"🇩🇪","Ghana":"🇬🇭",
+  "Haiti":"🇭🇹","Iran":"🇮🇷","Iraq":"🇮🇶","Ivory Coast":"🇨🇮",
+  "Japan":"🇯🇵","Jordan":"🇯🇴","Mexico":"🇲🇽","Morocco":"🇲🇦",
+  "Netherlands":"🇳🇱","New Zealand":"🇳🇿","Norway":"🇳🇴",
+  "Panama":"🇵🇦","Paraguay":"🇵🇾","Portugal":"🇵🇹","Qatar":"🇶🇦",
+  "Saudi Arabia":"🇸🇦","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Senegal":"🇸🇳",
+  "South Africa":"🇿🇦","South Korea":"🇰🇷","Spain":"🇪🇸",
+  "Sweden":"🇸🇪","Switzerland":"🇨🇭","Tunisia":"🇹🇳","Turkey":"🇹🇷",
+  "United States":"🇺🇸","Uruguay":"🇺🇾","Uzbekistan":"🇺🇿",
 };
 const flag = t => FLAGS[t] ?? "🏳️";
 
-// DD.MM.YYYY → "11 Haz · Perşembe"
+// Türkçe addan İngilizce ada (DB'deki milliyet alanı için)
+const TR_TO_EN = {
+  "ABD":"United States","Almanya":"Germany","Arjantin":"Argentina",
+  "Avustralya":"Australia","Avusturya":"Austria","Belçika":"Belgium",
+  "Bosna Hersek":"Bosnia and Herzegovina","Brezilya":"Brazil",
+  "Cezayir":"Algeria","Çekya":"Czech Republic","Curaçao":"Curaçao",
+  "Ekvador":"Ecuador","Fas":"Morocco","Fildişi Sahili":"Ivory Coast",
+  "Fransa":"France","Gana":"Ghana","G.Kore":"South Korea",
+  "Güney Afrika":"South Africa","Güney Kore":"South Korea",
+  "Haiti":"Haiti","Hollanda":"Netherlands","Hırvatistan":"Croatia",
+  "Irak":"Iraq","İngiltere":"England","İran":"Iran",
+  "İskoçya":"Scotland","İspanya":"Spain","İsveç":"Sweden","İsviçre":"Switzerland",
+  "Japonya":"Japan","Kanada":"Canada","Katar":"Qatar",
+  "Kolombiya":"Colombia","Kongo DR":"Congo DR",
+  "Meksika":"Mexico","Mısır":"Egypt","Norveç":"Norway",
+  "Panama":"Panama","Paraguay":"Paraguay","Portekiz":"Portugal",
+  "S. Arabistan":"Saudi Arabia","Senegal":"Senegal","Tunus":"Tunisia",
+  "Türkiye":"Turkey","Uruguay":"Uruguay","Ürdün":"Jordan",
+  "Yeni Zelanda":"New Zealand","Özbekistan":"Uzbekistan",
+  "Yeşil Burun":"Cape Verde Islands",
+};
+const toEn = name => TR_TO_EN[name] || name;
+
 const TR_MONTHS = ["","Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
 const TR_DAYS   = ["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"];
+
 function formatDate(ddmmyyyy) {
   if (!ddmmyyyy) return ddmmyyyy;
   const [dd, mm, yyyy] = ddmmyyyy.split(".");
@@ -53,37 +83,36 @@ function formatDate(ddmmyyyy) {
   return `${+dd} ${TR_MONTHS[+mm]} · ${TR_DAYS[d.getDay()]}`;
 }
 
-// Türkçe takım isimlerini İngilizce'ye eşle (H2H API İngilizce takım ismi bekler)
-const TR_TO_EN = {
-  "ABD":"United States","Almanya":"Germany","Arjantin":"Argentina",
-  "Avustralya":"Australia","Avusturya":"Austria","Belçika":"Belgium",
-  "Bolivya":"Bolivia","Bosna Hersek":"Bosnia-Herzegovina","Brezilya":"Brazil",
-  "Cezayir":"Algeria","Çekya":"Czech Republic","Çin":"China",
-  "Danimarka":"Denmark","Ekvador":"Ecuador","Fas":"Morocco",
-  "Finlandiya":"Finland","Fransa":"France","G.Kore":"South Korea",
-  "Gana":"Ghana","Güney Afrika":"South Africa","Güney Kore":"South Korea",
-  "Hollanda":"Netherlands","Hırvatistan":"Croatia","Irak":"Iraq",
-  "İngiltere":"England","İran":"Iran","İrlanda":"Ireland","İskoçya":"Scotland",
-  "İspanya":"Spain","İsviçre":"Switzerland","İtalya":"Italy","Japonya":"Japan",
-  "Kamerun":"Cameroon","Kanada":"Canada","Katar":"Qatar",
-  "Kazakistan":"Kazakhstan","Kolombiya":"Colombia","Kongo":"DR Congo",
-  "Meksika":"Mexico","Mısır":"Egypt","Nijerya":"Nigeria","Norveç":"Norway",
-  "Panama":"Panama","Paraguay":"Paraguay","Polonya":"Poland",
-  "Portekiz":"Portugal","Romanya":"Romania","S. Arabistan":"Saudi Arabia",
-  "Senegal":"Senegal","Slovenya":"Slovenia","Sırbistan":"Serbia",
-  "Şili":"Chile","Türkiye":"Turkey","Ukrayna":"Ukraine","Uruguay":"Uruguay",
-  "Venezuela":"Venezuela","Yeni Zelanda":"New Zealand","Ürdün":"Jordan",
-  "Özbekistan":"Uzbekistan","Curaçao":"Curacao","Fildişi Sahili":"Ivory Coast",
-  "Haiti":"Haiti","İsveç":"Sweden","Tunus":"Tunisia","Yeşil Burun":"Cape Verde",
-};
-const toEn = name => TR_TO_EN[name] || name;
+function useCountdown() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
 
-export default function FixtureList() {
-  const [fixtures, setFixtures]   = useState([]);
-  const [loading,  setLoading]    = useState(true);
-  const [grupFilter, setGrp]      = useState(null); // null = tümü
-  const [showAll,  setShowAll]    = useState(false);
-  const [openH2H,  setOpenH2H]   = useState(null);  // "ev_takim|dep_takim" key
+function countdownStr(tarih_utc, now) {
+  if (!tarih_utc) return null;
+  const match = new Date(tarih_utc);
+  const diff = match - now;
+  if (diff <= 0) return null;
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  if (d > 0) return `${d}g ${h}s`;
+  if (h > 0) return `${h}s ${m}d`;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+export default function FixtureList({ onTeamClick }) {
+  const [fixtures, setFixtures] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [grupFilter, setGrp]    = useState(null);
+  const [showAll,  setShowAll]  = useState(false);
+  const [openH2H,  setOpenH2H] = useState(null);
+  const now = useCountdown();
 
   useEffect(() => {
     api.getFixtures({ limit: 200 })
@@ -99,9 +128,8 @@ export default function FixtureList() {
     ? fixtures.filter(f => f.grup === grupFilter)
     : fixtures;
 
-  const displayed = showAll ? filtered : filtered.slice(0, 14);
+  const displayed = showAll ? filtered : filtered.slice(0, 18);
 
-  // Tarihe göre grupla
   const byDate = {};
   displayed.forEach(f => {
     const d = (f.tarih_tr || "").split(" ")[0] || "—";
@@ -111,7 +139,7 @@ export default function FixtureList() {
 
   return (
     <div style={{ marginBottom: 20 }}>
-      {/* ── Başlık ── */}
+      {/* Başlık */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <span style={{ fontSize:16 }}>📅</span>
@@ -122,9 +150,10 @@ export default function FixtureList() {
             color:"#d97706", padding:"1px 8px", borderRadius:5,
           }}>{fixtures.length} maç</span>
         </div>
+        <span style={{ fontSize:10, color:"#94a3b8" }}>🕐 Türkiye saati</span>
       </div>
 
-      {/* ── Grup filtresi ── */}
+      {/* Grup filtresi */}
       <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:10 }}>
         {[null, ...uniqueGroups].map(g => {
           const active = grupFilter === g;
@@ -137,14 +166,14 @@ export default function FixtureList() {
                 background: active ? color : "#f1f5f9",
                 color: active ? "#fff" : "#64748b",
                 border:`1px solid ${active ? color : "#e2e8f0"}`,
-                cursor:"pointer", transition:"all .15s",
+                cursor:"pointer",
               }}
             >{g ? `Grup ${g}` : "Tümü"}</button>
           );
         })}
       </div>
 
-      {/* ── Fikstür listesi ── */}
+      {/* Fikstür listesi */}
       <div style={{
         background:"#ffffff", borderRadius:12,
         border:"1px solid #e2e8f0", overflow:"hidden",
@@ -152,7 +181,6 @@ export default function FixtureList() {
       }}>
         {Object.entries(byDate).map(([date, matches], di) => (
           <div key={date}>
-            {/* Tarih başlığı */}
             <div style={{
               padding:"6px 14px",
               background:"#f8fafc",
@@ -165,28 +193,24 @@ export default function FixtureList() {
             </div>
 
             {matches.map((f, i) => {
-              const gc     = GRP_COLOR[f.grup] ?? "#38bdf8";
-              const time   = (f.tarih_tr || "").split(" ")[1] ?? "";
-              const played = f.ev_gol !== null && f.dep_gol !== null;
-              const h2hKey = `${f.ev_takim}|${f.dep_takim}`;
+              const gc      = GRP_COLOR[f.grup] ?? "#38bdf8";
+              const time    = (f.tarih_tr || "").split(" ")[1] ?? "";
+              const played  = f.ev_gol !== null && f.dep_gol !== null;
+              const cdStr   = !played ? countdownStr(f.tarih_utc, now) : null;
+              const h2hKey  = `${f.ev_takim}|${f.dep_takim}`;
               const h2hOpen = openH2H === h2hKey;
+              const isLive  = !played && cdStr === null && f.tarih_utc;
 
               return (
                 <div key={f.id}>
-                  {/* Maç satırı */}
-                  <div
-                    onClick={() => setOpenH2H(h2hOpen ? null : h2hKey)}
-                    style={{
-                      display:"flex", alignItems:"center", gap:8,
-                      padding:"9px 14px",
-                      borderBottom: (!h2hOpen && i < matches.length - 1) ? "1px solid #f1f5f9" : "none",
-                      borderLeft: `3px solid ${gc}`,
-                      cursor:"pointer",
-                      background: h2hOpen ? "#fefce8" : "transparent",
-                      transition:"background .15s",
-                    }}
-                  >
-                    {/* Grup etiketi */}
+                  <div style={{
+                    display:"flex", alignItems:"center", gap:8,
+                    padding:"10px 14px",
+                    borderBottom: (!h2hOpen && i < matches.length - 1) ? "1px solid #f1f5f9" : "none",
+                    borderLeft: `3px solid ${gc}`,
+                    background: h2hOpen ? "#fefce8" : isLive ? "#fff7ed" : "transparent",
+                  }}>
+                    {/* Grup */}
                     {f.grup && (
                       <span style={{
                         fontSize:9, fontWeight:900, minWidth:28, textAlign:"center",
@@ -197,60 +221,86 @@ export default function FixtureList() {
                     )}
 
                     {/* Ev sahibi */}
-                    <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"flex-end", gap:5, minWidth:0 }}>
-                      <span style={{ fontSize:12, fontWeight:600, color:"#0f172a", textAlign:"right",
-                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    <div
+                      onClick={() => onTeamClick && onTeamClick(toEn(f.ev_takim))}
+                      style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"flex-end", gap:5, minWidth:0, cursor: onTeamClick ? "pointer" : "default" }}
+                      title={onTeamClick ? `${f.ev_takim} kadrosunu gör` : ""}
+                    >
+                      <span style={{
+                        fontSize:12, fontWeight:700, color:"#0f172a", textAlign:"right",
+                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                      }}>
                         {f.ev_takim}
                       </span>
-                      <span style={{ fontSize:18, flexShrink:0 }}>{flag(f.ev_takim)}</span>
+                      <span style={{ fontSize:20, flexShrink:0, lineHeight:1 }}>{flag(f.ev_takim)}</span>
                     </div>
 
-                    {/* Skor / saat */}
-                    <div style={{ textAlign:"center", minWidth:58, flexShrink:0 }}>
+                    {/* Skor / saat / geri sayım */}
+                    <div
+                      onClick={() => setOpenH2H(h2hOpen ? null : h2hKey)}
+                      style={{ textAlign:"center", minWidth:70, flexShrink:0, cursor:"pointer" }}
+                    >
                       {played ? (
                         <span style={{
-                          fontSize:15, fontWeight:900, color:"#0f172a",
-                          background:"#f1f5f9", padding:"2px 8px", borderRadius:6,
+                          fontSize:16, fontWeight:900, color:"#0f172a",
+                          background:"#f1f5f9", padding:"3px 10px", borderRadius:6,
                         }}>
                           {f.ev_gol} – {f.dep_gol}
                         </span>
                       ) : (
-                        <span style={{ fontSize:11, fontWeight:700, color:"#94a3b8" }}>
-                          {time || "vs"}
-                        </span>
+                        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:1 }}>
+                          <span style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>
+                            {time || "–:–"}
+                          </span>
+                          {cdStr && (
+                            <span style={{
+                              fontSize:9, fontWeight:700, color:"#f59e0b",
+                              background:"#fef3c7", padding:"1px 5px", borderRadius:4,
+                            }}>⏱ {cdStr}</span>
+                          )}
+                          {isLive && (
+                            <span style={{
+                              fontSize:9, fontWeight:800, color:"#ef4444",
+                              background:"#fee2e2", padding:"1px 5px", borderRadius:4,
+                              animation: "hh-pulse 1s ease-in-out infinite alternate",
+                            }}>● CANLI</span>
+                          )}
+                        </div>
                       )}
                     </div>
 
                     {/* Deplasman */}
-                    <div style={{ flex:1, display:"flex", alignItems:"center", gap:5, minWidth:0 }}>
-                      <span style={{ fontSize:18, flexShrink:0 }}>{flag(f.dep_takim)}</span>
-                      <span style={{ fontSize:12, fontWeight:600, color:"#0f172a",
-                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    <div
+                      onClick={() => onTeamClick && onTeamClick(toEn(f.dep_takim))}
+                      style={{ flex:1, display:"flex", alignItems:"center", gap:5, minWidth:0, cursor: onTeamClick ? "pointer" : "default" }}
+                      title={onTeamClick ? `${f.dep_takim} kadrosunu gör` : ""}
+                    >
+                      <span style={{ fontSize:20, flexShrink:0, lineHeight:1 }}>{flag(f.dep_takim)}</span>
+                      <span style={{
+                        fontSize:12, fontWeight:700, color:"#0f172a",
+                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                      }}>
                         {f.dep_takim}
                       </span>
                     </div>
 
-                    {/* Stadyum + H2H toggle */}
-                    <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
+                    {/* Şehir + H2H */}
+                    <div style={{ display:"flex", alignItems:"center", gap:4, flexShrink:0 }}>
                       {f.stadyum_sehir && (
-                        <span style={{
-                          fontSize:9, color:"#94a3b8",
-                          textAlign:"right", maxWidth:76,
+                        <span className="hh-fixture-stadium" style={{
+                          fontSize:9, color:"#94a3b8", maxWidth:72,
                           overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-                          display: "none",
-                        }}
-                        className="hh-fixture-stadium">
-                          📍{f.stadyum_sehir}
-                        </span>
+                          display:"none",
+                        }}>📍{f.stadyum_sehir}</span>
                       )}
-                      <span style={{
-                        fontSize:9, color: h2hOpen ? "#d97706" : "#94a3b8",
-                        fontWeight:700, flexShrink:0,
-                      }}>⚔️</span>
+                      <span
+                        onClick={() => setOpenH2H(h2hOpen ? null : h2hKey)}
+                        style={{ fontSize:10, color: h2hOpen ? "#d97706" : "#cbd5e1", cursor:"pointer" }}
+                        title="H2H geçmiş"
+                      >⚔️</span>
                     </div>
                   </div>
 
-                  {/* H2H genişletme paneli */}
                   {h2hOpen && (
                     <div style={{
                       padding:"12px 14px 14px",
@@ -272,8 +322,7 @@ export default function FixtureList() {
         ))}
       </div>
 
-      {/* Daha fazla göster */}
-      {!showAll && filtered.length > 14 && (
+      {!showAll && filtered.length > 18 && (
         <button
           onClick={() => setShowAll(true)}
           style={{
@@ -284,12 +333,13 @@ export default function FixtureList() {
             cursor:"pointer",
           }}
         >
-          + {filtered.length - 14} maç daha ▼
+          + {filtered.length - 18} maç daha ▼
         </button>
       )}
 
       <style>{`
         @media(min-width:520px){ .hh-fixture-stadium{ display:block !important; } }
+        @keyframes hh-pulse { from{opacity:1} to{opacity:.4} }
       `}</style>
     </div>
   );

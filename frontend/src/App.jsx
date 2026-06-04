@@ -773,7 +773,7 @@ function TeamsPage({ onTeamSelect }) {
   const wc = teams.filter(t => WC2026_TEAMS.has(t.ulke));
 
   // Konfederasyon sırasına göre grupla
-  const ORDER = ["CONCACAF","UEFA","CONMEBOL","CAF","AFC"];
+  const ORDER = ["CONCACAF","UEFA","CONMEBOL","CAF","AFC","OFC"];
   const grouped = {};
   ORDER.forEach(c => { grouped[c] = []; });
   wc.forEach(t => {
@@ -825,7 +825,7 @@ function TeamsPage({ onTeamSelect }) {
       </div>
 
       {/* ── İçerik ── */}
-      {tab === "maclar" && <FixtureList />}
+      {tab === "maclar" && <FixtureList onTeamClick={onTeamSelect} />}
 
       {tab === "oyuncular" && <>
       {/* Konfederasyon grupları */}
@@ -1335,40 +1335,38 @@ export default function App() {
       }}>
         {/* ── HEADER ── */}
         <header style={S.header}>
-          {/* Pitch-green top stripe */}
           <div style={S.headerStripe} />
+          <div style={S.headerRow}>
+            {/* Sol: Logo */}
+            <Link to="/" onClick={() => setPage("teams")} style={{ textDecoration:"none", flexShrink:0 }}>
+              <span style={S.logo}>
+                {"HüCem Hattı".split("").map((ch, i) => {
+                  const blue = new Set([0,6]), gold = new Set([2]);
+                  return (
+                    <span key={i} style={{
+                      color: blue.has(i) ? "#38bdf8" : gold.has(i) ? "#f59e0b" : "#ffffff",
+                      textShadow: blue.has(i) ? "0 0 14px rgba(56,189,248,.5)"
+                        : gold.has(i) ? "0 0 14px rgba(245,158,11,.5)" : "none",
+                    }}>{ch}</span>
+                  );
+                })}
+              </span>
+            </Link>
 
-          <Link to="/" onClick={() => setPage("teams")} style={{ ...S.logoBtn, textDecoration:"none" }}>
-            <span style={S.logo}>
-              {"HüCem Hattı".split("").map((ch, i) => {
-                const blue = new Set([0,6]), gold = new Set([2]);
-                return (
-                  <span key={i} style={{
-                    color: blue.has(i) ? "#38bdf8" : gold.has(i) ? "#f59e0b" : "#ffffff",
-                    textShadow: blue.has(i) ? "0 0 18px rgba(56,189,248,.55)"
-                      : gold.has(i) ? "0 0 18px rgba(245,158,11,.55)" : "none",
-                  }}>{ch}</span>
-                );
-              })}
-            </span>
-          </Link>
+            {/* Orta: Nav linkleri */}
+            <div style={S.navRow}>
+              <NavLink to="/" exact onClick={() => setPage("teams")}>🏠 Takımlar</NavLink>
+              <NavLink to="/leaders">🏆 Liderler</NavLink>
+              <NavLink to="/compare">⚖️ Karşılaştır</NavLink>
+            </div>
 
-          <p style={S.sub}>
-            🏆 <span style={{ color:"#f59e0b" }}>2026</span> FIFA Dünya Kupası · Oyuncu Analiz Platformu
-          </p>
-
-          {/* ── NAV LİNKLERİ ── */}
-          <div style={S.navRow}>
-            <NavLink to="/" exact onClick={() => setPage("teams")}>🏠 Takımlar</NavLink>
-            <NavLink to="/leaders">🏆 Liderler</NavLink>
-            <NavLink to="/compare">⚖️ Karşılaştır</NavLink>
-          </div>
-
-          <div style={{ display:"flex", justifyContent:"center", marginTop:10 }}>
-            <PlayerSearch
-              placeholder="Oyuncu adı ile analiz et…"
-              onSelect={(id, name) => goPlayer(id, name)}
-            />
+            {/* Sağ: Search */}
+            <div style={{ flexShrink:0 }}>
+              <PlayerSearch
+                placeholder="Oyuncu ara…"
+                onSelect={(id, name) => goPlayer(id, name)}
+              />
+            </div>
           </div>
         </header>
 
@@ -1418,31 +1416,31 @@ function NavLink({ to, children, onClick }) {
 
 // ─── Stiller ──────────────────────────────────────────────────────────────────
 const S = {
-  // Header — koyu lacivert, kontrast sağlar
+  // Header — kompakt yatay navbar
   header: {
     position:"sticky", top:0, zIndex:50,
     background:"rgba(15,23,42,.97)",
     backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
     borderBottom:"1px solid rgba(255,255,255,.06)",
-    padding:"0 32px 22px", textAlign:"center",
     boxShadow:"0 2px 20px rgba(0,0,0,.25)",
   },
   headerStripe: {
-    height:3, marginBottom:20,
+    height:3,
     background:"linear-gradient(90deg, transparent 0%, #22c55e 15%, #22c55e 85%, transparent 100%)",
     opacity:.8,
   },
-  logoBtn: { background:"none", border:"none", cursor:"pointer", padding:0, marginBottom:4, display:"block" },
+  headerRow: {
+    display:"flex", alignItems:"center", gap:16,
+    padding:"10px 24px 12px",
+  },
   logo: {
-    fontSize:"clamp(28px,4.5vw,42px)", fontWeight:900, letterSpacing:-1,
+    fontSize:"clamp(18px,2.5vw,26px)", fontWeight:900, letterSpacing:-0.5,
     display:"inline-block",
   },
-  sub: { color:"#94a3b8", fontSize:12, fontWeight:500, letterSpacing:".08em", marginBottom:10 },
 
   // Nav links
   navRow: {
-    display:"flex", gap:8, justifyContent:"center",
-    marginBottom:14,
+    display:"flex", gap:6, flex:1, justifyContent:"center",
   },
   navLink: {
     textDecoration:"none",
