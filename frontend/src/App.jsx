@@ -158,18 +158,28 @@ if (typeof document !== "undefined" && !document.getElementById("hh-css")) {
 
 // ─── Bayraklar ────────────────────────────────────────────────────────────────
 const FLAGS = {
-  Argentina:"🇦🇷",Australia:"🇦🇺",Belgium:"🇧🇪",Brazil:"🇧🇷",Cameroon:"🇨🇲",
-  Canada:"🇨🇦","Costa Rica":"🇨🇷",Croatia:"🇭🇷",Denmark:"🇩🇰",Ecuador:"🇪🇨",
-  England:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",France:"🇫🇷",Germany:"🇩🇪",Ghana:"🇬🇭",Iran:"🇮🇷",
-  Japan:"🇯🇵",Mexico:"🇲🇽",Morocco:"🇲🇦",Netherlands:"🇳🇱",Poland:"🇵🇱",
-  Portugal:"🇵🇹",Qatar:"🇶🇦","Saudi Arabia":"🇸🇦",Senegal:"🇸🇳",Serbia:"🇷🇸",
-  "South Korea":"🇰🇷",Spain:"🇪🇸",Switzerland:"🇨🇭",Tunisia:"🇹🇳",
-  "United States":"🇺🇸",Uruguay:"🇺🇾",Wales:"🏴󠁧󠁢󠁷󠁬󠁳󠁿",
-  Albania:"🇦🇱",Austria:"🇦🇹","Czech Republic":"🇨🇿",Finland:"🇫🇮",
-  Hungary:"🇭🇺",Italy:"🇮🇹","North Macedonia":"🇲🇰",Russia:"🇷🇺",
-  Scotland:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",Slovakia:"🇸🇰",Sweden:"🇸🇪",Turkey:"🇹🇷",Ukraine:"🇺🇦",
-  Bolivia:"🇧🇴",Chile:"🇨🇱",Colombia:"🇨🇴",Paraguay:"🇵🇾",Peru:"🇵🇪",
-  Venezuela:"🇻🇪",Georgia:"🇬🇪",Romania:"🇷🇴",Slovenia:"🇸🇮",
+  // WC 2026 — 48 takım
+  Algeria:"🇩🇿",Argentina:"🇦🇷",Australia:"🇦🇺",Austria:"🇦🇹",
+  Belgium:"🇧🇪","Bosnia and Herzegovina":"🇧🇦",Brazil:"🇧🇷",
+  Canada:"🇨🇦","Cape Verde Islands":"🇨🇻",Colombia:"🇨🇴",
+  "Congo DR":"🇨🇩",Croatia:"🇭🇷","Curaçao":"🇨🇼",
+  "Czech Republic":"🇨🇿",Ecuador:"🇪🇨",Egypt:"🇪🇬",
+  England:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",France:"🇫🇷",Germany:"🇩🇪",Ghana:"🇬🇭",
+  Haiti:"🇭🇹",Iran:"🇮🇷",Iraq:"🇮🇶","Ivory Coast":"🇨🇮",
+  Japan:"🇯🇵",Jordan:"🇯🇴",Mexico:"🇲🇽",Morocco:"🇲🇦",
+  Netherlands:"🇳🇱","New Zealand":"🇳🇿",Norway:"🇳🇴",
+  Panama:"🇵🇦",Paraguay:"🇵🇾",Portugal:"🇵🇹",Qatar:"🇶🇦",
+  "Saudi Arabia":"🇸🇦",Scotland:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",Senegal:"🇸🇳",
+  "South Africa":"🇿🇦","South Korea":"🇰🇷",Spain:"🇪🇸",
+  Sweden:"🇸🇪",Switzerland:"🇨🇭",Tunisia:"🇹🇳",Turkey:"🇹🇷",
+  "United States":"🇺🇸",Uruguay:"🇺🇾",Uzbekistan:"🇺🇿",
+  "New Zealand":"🇳🇿",
+  // Diğer
+  Albania:"🇦🇱",Cameroon:"🇨🇲",Chile:"🇨🇱","Costa Rica":"🇨🇷",
+  Denmark:"🇩🇰",Finland:"🇫🇮",Georgia:"🇬🇪",Hungary:"🇭🇺",
+  Italy:"🇮🇹","North Macedonia":"🇲🇰",Peru:"🇵🇪",Poland:"🇵🇱",
+  Romania:"🇷🇴",Russia:"🇷🇺",Serbia:"🇷🇸",Slovakia:"🇸🇰",
+  Slovenia:"🇸🇮",Ukraine:"🇺🇦",Venezuela:"🇻🇪",Wales:"🏴󠁧󠁢󠁷󠁬󠁳󠁿",
 };
 const flag = c => FLAGS[c] ?? "🏳️";
 
