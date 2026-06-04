@@ -175,42 +175,51 @@ const flag = c => FLAGS[c] ?? "🏳️";
 
 // ─── 2026 Dünya Kupası katılımcıları ─────────────────────────────────────────
 const WC2026_TEAMS = new Set([
-  // CONCACAF — Ev sahipleri
-  "United States","Canada","Mexico",
-  // UEFA — Avrupa (16 takım)
+  // CONCACAF (6)
+  "United States","Canada","Mexico","Panama","Haiti","Curaçao",
+  // UEFA (16)
   "Germany","France","Spain","England","Portugal","Netherlands",
-  "Croatia","Austria","Switzerland","Denmark","Turkey","Serbia",
-  "Romania","Albania","Georgia","Hungary","Italy","Scotland","Slovenia",
-  // CONMEBOL — Güney Amerika (6 takım)
-  "Argentina","Brazil","Uruguay","Colombia","Ecuador","Venezuela",
-  // CAF — Afrika
-  "Morocco","Senegal",
-  // AFC — Asya
-  "Japan","South Korea","Australia","Iran",
+  "Croatia","Austria","Switzerland","Turkey","Scotland","Czech Republic",
+  "Belgium","Bosnia and Herzegovina","Norway","Sweden",
+  // CONMEBOL (6)
+  "Argentina","Brazil","Uruguay","Colombia","Ecuador","Paraguay",
+  // CAF (9+1)
+  "Morocco","Senegal","Algeria","Ivory Coast","Cape Verde Islands",
+  "Egypt","Ghana","South Africa","Tunisia","Congo DR",
+  // AFC (8+1)
+  "Japan","South Korea","Australia","Iran","Saudi Arabia",
+  "Iraq","Jordan","Qatar","Uzbekistan",
+  // OFC (1)
+  "New Zealand",
 ]);
 
 const CONF_COLOR = {
   CONCACAF:"#f97316", UEFA:"#38bdf8", CONMEBOL:"#f59e0b",
-  CAF:"#10b981", AFC:"#a78bfa",
+  CAF:"#10b981", AFC:"#a78bfa", OFC:"#ec4899",
 };
 const CONF_META = {
   CONCACAF:{ label:"CONCACAF", sub:"Kuzey Amerika · Ev Sahipleri", icon:"🌎" },
   UEFA:    { label:"UEFA",     sub:"Avrupa",                       icon:"⭐" },
   CONMEBOL:{ label:"CONMEBOL", sub:"Güney Amerika",                icon:"🌟" },
   CAF:     { label:"CAF",      sub:"Afrika",                       icon:"🌍" },
-  AFC:     { label:"AFC",      sub:"Asya / Pasifik",               icon:"🌏" },
+  AFC:     { label:"AFC",      sub:"Asya",                         icon:"🌏" },
+  OFC:     { label:"OFC",      sub:"Okyanusya",                    icon:"🏝️" },
 };
 const TEAM_CONF = {
   "United States":"CONCACAF","Canada":"CONCACAF","Mexico":"CONCACAF",
+  "Panama":"CONCACAF","Haiti":"CONCACAF","Curaçao":"CONCACAF",
   "Germany":"UEFA","France":"UEFA","Spain":"UEFA","England":"UEFA",
   "Portugal":"UEFA","Netherlands":"UEFA","Croatia":"UEFA","Austria":"UEFA",
-  "Switzerland":"UEFA","Denmark":"UEFA","Turkey":"UEFA","Serbia":"UEFA",
-  "Romania":"UEFA","Albania":"UEFA","Georgia":"UEFA","Hungary":"UEFA",
-  "Italy":"UEFA","Scotland":"UEFA","Slovenia":"UEFA",
+  "Switzerland":"UEFA","Turkey":"UEFA","Scotland":"UEFA","Czech Republic":"UEFA",
+  "Belgium":"UEFA","Bosnia and Herzegovina":"UEFA","Norway":"UEFA","Sweden":"UEFA",
   "Argentina":"CONMEBOL","Brazil":"CONMEBOL","Uruguay":"CONMEBOL",
-  "Colombia":"CONMEBOL","Ecuador":"CONMEBOL","Venezuela":"CONMEBOL",
-  "Morocco":"CAF","Senegal":"CAF",
+  "Colombia":"CONMEBOL","Ecuador":"CONMEBOL","Paraguay":"CONMEBOL",
+  "Morocco":"CAF","Senegal":"CAF","Algeria":"CAF","Ivory Coast":"CAF",
+  "Cape Verde Islands":"CAF","Egypt":"CAF","Ghana":"CAF",
+  "South Africa":"CAF","Tunisia":"CAF","Congo DR":"CAF",
   "Japan":"AFC","South Korea":"AFC","Australia":"AFC","Iran":"AFC",
+  "Saudi Arabia":"AFC","Iraq":"AFC","Jordan":"AFC","Qatar":"AFC","Uzbekistan":"AFC",
+  "New Zealand":"OFC",
 };
 
 // ─── Player photo hook (backend proxy) ────────────────────────────────────────
