@@ -523,6 +523,7 @@ def get_teams(engine: Engine = Depends(get_engine)):
             SELECT milliyet AS ulke, COUNT(*) AS oyuncu_sayisi
             FROM players
             WHERE milliyet IS NOT NULL AND milliyet != ''
+              AND wc_squad_yil = 2026
             GROUP BY milliyet
             ORDER BY milliyet
         """)).mappings().fetchall()
@@ -540,6 +541,7 @@ def get_team_players(ulke: str, engine: Engine = Depends(get_engine)):
             SELECT id AS oyuncu_id, isim, mevki, milliyet
             FROM players
             WHERE milliyet = :ulke
+              AND wc_squad_yil = 2026
             ORDER BY isim
         """), {"ulke": ulke}).mappings().fetchall()
     return [PlayerSummary(**dict(r)) for r in rows]
@@ -564,6 +566,7 @@ def search_players(
             SELECT id AS oyuncu_id, isim, mevki, milliyet
             FROM players
             WHERE unaccent(isim) ILIKE unaccent(:q)
+              AND wc_squad_yil = 2026
             ORDER BY isim
             LIMIT 20
         """), {"q": f"%{q}%"}).mappings().fetchall()
