@@ -15,10 +15,11 @@ API_KEY = os.getenv("API_FOOTBALL_KEY", "71bf39cd056da0837d11f93dfec24ca0")
 LIGLER = [
     (32, 2024, "WC 2026 Qual - Europe",       "2024/25"),
     (5,  2024, "UEFA Nations League",          "2024/25"),
-    (31, 2024, "WC 2026 Qual - CONCACAF",      "2024/25"),
-    (29, 2024, "WC 2026 Qual - Africa",        "2024/25"),
-    (30, 2024, "WC 2026 Qual - Asia",          "2024/25"),
-    (34, 2026, "WC 2026 Qual - South America", "2025/26"),
+    (31, 2022, "WC 2026 Qual - CONCACAF",      "2022/23"),
+    (29, 2023, "WC 2026 Qual - Africa",        "2023/24"),
+    (30, 2026, "WC 2026 Qual - Asia",          "2025/26"),
+    (34, 2022, "WC 2026 Qual - South America", "2022/23"),
+    (33, 2026, "WC 2026 Qual - Oceania",       "2025/26"),
 ]
 
 def api_get(path):
