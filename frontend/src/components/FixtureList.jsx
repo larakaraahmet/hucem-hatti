@@ -195,7 +195,7 @@ export default function FixtureList({ onTeamClick }) {
             {matches.map((f, i) => {
               const gc      = GRP_COLOR[f.grup] ?? "#38bdf8";
               const time    = (f.tarih_tr || "").split(" ")[1] ?? "";
-              const played  = f.ev_gol !== null && f.dep_gol !== null;
+              const played  = f.durum && f.durum !== "programlı" && f.durum !== "TIMED";
               const cdStr   = !played ? countdownStr(f.tarih_utc, now) : null;
               const h2hKey  = `${f.ev_takim}|${f.dep_takim}`;
               const h2hOpen = openH2H === h2hKey;
