@@ -36,8 +36,8 @@ _AKSANLAR = str.maketrans(
 )
 
 def _norm(s: str) -> str:
-    """İsim normalize: küçük harf, aksanlar ASCII'ye, çift boşluk temizlenir."""
-    return re.sub(r"\s+", " ", s.translate(_AKSANLAR).lower().strip())
+    """İsim normalize: küçük harf, aksanlar ASCII'ye, tire→boşluk, çift boşluk temizlenir."""
+    return re.sub(r"\s+", " ", s.translate(_AKSANLAR).lower().replace("-", " ").strip())
 
 
 # ── Oyuncu ID arama (fuzzy) ───────────────────────────────────────────────────
