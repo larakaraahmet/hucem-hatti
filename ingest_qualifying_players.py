@@ -5,7 +5,7 @@ api-football.com günlük 100 istek limiti nedeniyle kaldığı yerden devam ede
 Kullanım: python3 ingest_qualifying_players.py
 Progress: .qualifying_progress.json dosyasında saklanır.
 """
-import json, os, re, urllib.request, time
+import json, os, re, unicodedata, urllib.request, time
 from sqlalchemy import create_engine, text
 
 DB_URL = os.getenv(
@@ -24,12 +24,11 @@ LIGLER = [
     (5,  2024, "UEFA Nations League",          "2024/25"),
 ]
 
-_AKSANLAR = str.maketrans(
-    "áàâäéèêëíìîïóòôöúùûüñçğşıćčšžđ",
-    "aaaaeeeeiiiioooouuuuncgsiccszd",
-)
 def _norm(s):
-    return re.sub(r"\s+", " ", s.translate(_AKSANLAR).lower().replace("-", " ").strip())
+    s2 = unicodedata.normalize("NFKD", s)
+    s2 = "".join(c for c in s2 if not unicodedata.combining(c))
+    s2 = s2.replace("ı", "i").replace("İ", "I").replace("ş", "s").replace("ğ", "g").replace("ç", "c")
+    return re.sub(r"\s+", " ", s2.lower().replace("-", " ").strip())
 
 def _jaccard(a, b):
     ta, tb = set(a.split()), set(b.split())
@@ -107,7 +106,9 @@ def main():
                         continue
                     s = stats[0]
 
-                    pid = find_player(p["name"])
+                    # "T. Teuma" formatı yerine tam isim kullan
+                    tam_isim = (p.get("firstname","") + " " + p.get("lastname","")).strip()
+                    pid = find_player(tam_isim) or find_player(p["name"])
                     if not pid:
                         continue
 

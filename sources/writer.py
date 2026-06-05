@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 from typing import Optional
 
 from sqlalchemy import create_engine, text
@@ -30,14 +31,22 @@ log = logging.getLogger(__name__)
 
 # ── Yardımcı: isim normalize ─────────────────────────────────────────────────
 
-_AKSANLAR = str.maketrans(
-    "áàâäéèêëíìîïóòôöúùûüñçğşı",
-    "aaaaeeeeiiiioooouuuuncgsi",
-)
+# Özel Türkçe/Arapça karakter düzeltmeleri (unicodedata'nın kaçırdıkları)
+_OZEL = str.maketrans("İIŞŞĞĞÇÇÜÜÖÖışğçüö", "iissggccuuooissggccuuoo"[::2]*2)
 
 def _norm(s: str) -> str:
-    """İsim normalize: küçük harf, aksanlar ASCII'ye, tire→boşluk, çift boşluk temizlenir."""
-    return re.sub(r"\s+", " ", s.translate(_AKSANLAR).lower().replace("-", " ").strip())
+    """
+    İsim normalize:
+    1. NFKD decompose → combining char'ları sil (aksan, cedilla vb.)
+    2. Türkçe İ/ı özel karakterleri düzelt
+    3. Küçük harf, tire→boşluk, çift boşluk temizle
+    """
+    # NFKD: é→e+accent, ğ→g+breve vb.
+    s2 = unicodedata.normalize("NFKD", s)
+    s2 = "".join(c for c in s2 if not unicodedata.combining(c))
+    # Türkçe dotless ı ve diğerleri
+    s2 = s2.replace("ı", "i").replace("İ", "I").replace("ş", "s").replace("ğ", "g").replace("ç", "c")
+    return re.sub(r"\s+", " ", s2.lower().replace("-", " ").strip())
 
 
 # ── Oyuncu ID arama (fuzzy) ───────────────────────────────────────────────────
