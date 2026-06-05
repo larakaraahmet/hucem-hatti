@@ -257,12 +257,20 @@ def _fetch_player_base(player_id: int, engine: Engine) -> dict:
     return dict(row)
 
 
+_EMPTY_METRICS = {
+    "per90":       {"xg90":0,"xa90":0,"gol90":0,"asist90":0,"sut90":0,"isabetli90":0,"prog_pass90":0},
+    "percentiles": {"xg90":0,"xa90":0,"gol90":0,"asist90":0,"sut90":0,"isabetli90":0,"prog_pass90":0},
+    "mac_sayisi": 0, "toplam_dakika": 0,
+    "toplam_gol": 0, "toplam_asist": 0,
+    "toplam_xg": 0, "toplam_xa": 0,
+}
+
 def _metrics_or_404(player_id: int, engine: Engine) -> dict:
-    """get_player_metrics çağırır; ValueError → 404'e dönüştürür."""
+    """get_player_metrics çağırır; veri yoksa boş metrik döner (404 değil)."""
     try:
         return get_player_metrics(player_id, engine)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError:
+        return _EMPTY_METRICS
 
 
 # ---------------------------------------------------------------------------
