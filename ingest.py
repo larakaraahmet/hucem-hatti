@@ -38,6 +38,12 @@ COMPETITIONS = [
     (55,  282, "UEFA Euro 2024"),
     (55,   43, "UEFA Euro 2020"),
     (223, 282, "Copa América 2024"),
+    # Şampiyonlar Ligi finalleri (1 maç her sezon)
+    (16,    4, "Champions League 2018/19"),
+    (16,    1, "Champions League 2017/18"),
+    (16,    2, "Champions League 2016/17"),
+    (16,   27, "Champions League 2015/16"),
+    (16,   26, "Champions League 2014/15"),
 ]
 TOURNAMENT_NAME = "2022 FIFA Dünya Kupası"
 
