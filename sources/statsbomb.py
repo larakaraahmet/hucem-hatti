@@ -50,6 +50,10 @@ _TURNUVALAR: dict[tuple[int, int], tuple[str, str, str]] = {
     (7,   235): ("Ligue1",     "2022", "Ligue 1 2022/23"),
     (9,   281): ("Bundesliga", "2023", "Bundesliga 2023/24"),
     (16,  4):   ("UCL",        "2018", "Champions League 2018/19"),
+    (16,  1):   ("UCL",        "2017", "Champions League 2017/18"),
+    (16,  2):   ("UCL",        "2016", "Champions League 2016/17"),
+    (16, 27):   ("UCL",        "2015", "Champions League 2015/16"),
+    (16, 26):   ("UCL",        "2014", "Champions League 2014/15"),
 }
 
 # Kısa kod → (comp_id, season_id) → lig + sezon

@@ -56,6 +56,7 @@ body { background: #f1f5f9; font-family: 'Inter','Segoe UI',sans-serif; color: #
   100% { opacity: 1; transform: scale(1) rotate(0deg) translateY(0); }
 }
 @keyframes hh-fade-up   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+@keyframes hh-fadein    { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
 @keyframes hh-splash-out{ 0% { opacity:1; transform:scale(1); } 100% { opacity:0; transform:scale(1.04); } }
 @keyframes hh-shimmer   { from { background-position:-300% center; } to { background-position:300% center; } }
 @keyframes hh-ring      { 0%,100%{ opacity:.55; transform:scale(.88); } 50%{ opacity:.9; transform:scale(1.12); } }
@@ -968,6 +969,60 @@ function compMeta(name) {
   return { icon:"🏟️", color:"#64748b" };
 }
 
+// ─── Performans profili popup (isim yanında hover card) ──────────────────────
+function PerfPopup({ p90 }) {
+  const [open, setOpen] = useState(false);
+  const metrics = [
+    { l:"xG/90",  v: p90.xg90,    c:"#10b981" },
+    { l:"xA/90",  v: p90.xa90,    c:"#38bdf8" },
+    { l:"Gol/90", v: p90.gol90,   c:"#f59e0b" },
+    { l:"Şut/90", v: p90.sut90,   c:"#a78bfa" },
+  ];
+  return (
+    <div style={{ position:"relative", display:"inline-block", marginLeft:8 }}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button style={{
+        background:"rgba(245,158,11,.12)", border:"1px solid rgba(245,158,11,.3)",
+        borderRadius:6, color:"#d97706", fontSize:10, fontWeight:800,
+        padding:"3px 9px", cursor:"default",
+        transition:"all .2s",
+        transform: open ? "scale(1.08)" : "scale(1)",
+      }}>
+        📊 Performans
+      </button>
+      {open && (
+        <div style={{
+          position:"absolute", top:"calc(100% + 6px)", left:0,
+          background:"#ffffff", border:"1px solid #e2e8f0",
+          borderRadius:12, padding:"12px 14px",
+          boxShadow:"0 8px 30px rgba(0,0,0,.12)",
+          zIndex:100, minWidth:180,
+          animation:"hh-fadein .15s ease",
+        }}>
+          {metrics.map(({l,v,c}) => (
+            <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+              <span style={{ fontSize:11, color:"#64748b" }}>{l}</span>
+              <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                <div style={{
+                  width: Math.min((v ?? 0) * 40, 60),
+                  height:4, borderRadius:2,
+                  background: c, opacity:.7,
+                  transition:"width .3s",
+                }} />
+                <span style={{ fontSize:12, fontWeight:800, color:"#0f172a", minWidth:32, textAlign:"right" }}>
+                  {(v ?? 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Oyuncu sayfası ───────────────────────────────────────────────────────────
 const SEC_NAV = [
   { id:"sec-maclar",  icon:"📋", label:"Maçlar"    },
@@ -1079,6 +1134,10 @@ function PlayerPage({ playerId, playerName, onBack }) {
         <div style={{ flex:1, minWidth:0 }}>
           <div style={S.heroNameRow}>
             <h2 style={S.heroName}>{profile?.isim ?? playerName}</h2>
+            {/* Performans profili popup */}
+            {p90 && Object.values(p90).some(v => v > 0) && (
+              <PerfPopup p90={p90} />
+            )}
           </div>
           <div style={S.badgesRow}>
             {profile?.milliyet && <span style={S.badgeGold}>{flag(profile.milliyet)} {profile.milliyet}</span>}
@@ -1160,6 +1219,39 @@ function PlayerPage({ playerId, playerName, onBack }) {
         )}
       </div>
 
+      {/* ── Lig / Turnuva filtresi — EN ÜSTTE ── */}
+      {comps.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize:10, fontWeight:700, color:"#94a3b8", marginBottom:6, letterSpacing:".06em" }}>
+            TURNUVA / LİG FİLTRESİ
+          </div>
+          <div style={S.compFilter}>
+            <button
+              onClick={() => setComp(null)}
+              style={{ ...S.compChip, ...(competition === null ? S.compChipActive : {}) }}
+            >
+              🌐 Tümü
+            </button>
+            {comps.map(c => {
+              const meta  = compMeta(c.turnuva);
+              const isAct = competition === c.turnuva;
+              return (
+                <button key={c.turnuva}
+                  onClick={() => setComp(isAct ? null : c.turnuva)}
+                  style={{
+                    ...S.compChip,
+                    ...(isAct ? { ...S.compChipActive, borderColor: meta.color + "66", background: meta.color + "18", color: meta.color } : {}),
+                  }}
+                >
+                  {meta.icon} {c.turnuva}
+                  <span style={{ opacity:.6, fontSize:9, marginLeft:4 }}>{c.mac_sayisi}m</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Bölüm navigasyonu ── */}
       <SectionNav />
 
@@ -1167,34 +1259,6 @@ function PlayerPage({ playerId, playerName, onBack }) {
       <div id="sec-maclar">
         <PlayerMatches playerId={playerId} milliyet={profile?.milliyet} competition={competition} />
       </div>
-
-      {/* ── Lig / Turnuva filtresi ── */}
-      {comps.length > 1 && (
-        <div style={S.compFilter}>
-          <button
-            onClick={() => setComp(null)}
-            style={{ ...S.compChip, ...(competition === null ? S.compChipActive : {}) }}
-          >
-            🌐 Tümü
-          </button>
-          {comps.map(c => {
-            const meta  = compMeta(c.turnuva);
-            const isAct = competition === c.turnuva;
-            return (
-              <button key={c.turnuva}
-                onClick={() => setComp(isAct ? null : c.turnuva)}
-                style={{
-                  ...S.compChip,
-                  ...(isAct ? { ...S.compChipActive, borderColor: meta.color + "66", background: meta.color + "18", color: meta.color } : {}),
-                }}
-              >
-                {meta.icon} {c.turnuva}
-                <span style={{ opacity:.6, fontSize:9, marginLeft:4 }}>{c.mac_sayisi}m</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {/* ════ PERFORMANS ANALİZİ ════ */}
       <div id="sec-analiz" style={S.sectionHeader}>
@@ -1218,7 +1282,6 @@ function PlayerPage({ playerId, playerName, onBack }) {
 
       <div className="hh-grid2">
         <section style={S.cell}><ShotQuality      playerId={playerId} competition={competition} /></section>
-        <section style={S.cell}><SeasonProgression playerId={playerId} /></section>
       </div>
 
       {/* xG Trend (Understat — verisi varsa göster) */}
@@ -1276,10 +1339,6 @@ function PlayerPage({ playerId, playerName, onBack }) {
         <section style={S.cell} id="sec-profil"><RadarChart       playerId={playerId} playerName={profile?.isim ?? playerName} /></section>
       </div>
 
-      <div className="hh-grid2">
-        <section style={S.cell}><MatchHighlights  playerId={playerId} milliyet={profile?.milliyet} competition={competition} /></section>
-        <section style={S.cell}><SimilarPlayers   playerId={playerId} playerName={profile?.isim ?? playerName} /></section>
-      </div>
 
       {/* ════ BAHİS & TAHMİN ════ */}
       <div id="sec-bahis" style={{ ...S.sectionHeader, marginTop: 12 }}>
