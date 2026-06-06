@@ -1069,6 +1069,30 @@ def get_player_market(player_id: int, engine: Engine = Depends(get_engine)):
     return d
 
 
+@app.get("/player/{player_id}/gk-stats", summary="Kaleci sezonluk istatistikleri (kurtarış, GA90, CS)")
+def get_player_gk_stats(player_id: int, engine: Engine = Depends(get_engine)):
+    _fetch_player_base(player_id, engine)
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text("""
+                SELECT
+                    lig, sezon, takim,
+                    mac_sayisi, dakika,
+                    yenilen_gol, ga90,
+                    isabetli_sut_karsi, kurtaris, kurtaris_pct,
+                    gol_yenmeme, gol_yenmeme_pct,
+                    galibiyet, beraberlik, maglubiyet,
+                    penalti_deneme, penalti_kurtaris,
+                    kaynak
+                FROM player_gk_stats
+                WHERE oyuncu_id = :id
+                ORDER BY sezon DESC, mac_sayisi DESC NULLS LAST
+            """), {"id": player_id}).mappings().fetchall()
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
 @app.get("/player/{player_id}/xg-trend", summary="Understat xG/xA sezon trendi")
 def get_player_xg_trend(player_id: int, engine: Engine = Depends(get_engine)):
     _fetch_player_base(player_id, engine)

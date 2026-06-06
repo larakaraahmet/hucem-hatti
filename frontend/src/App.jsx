@@ -14,7 +14,8 @@ import GoalTiming       from "./components/GoalTiming.jsx";
 import ContribTimeline  from "./components/ContribTimeline.jsx";
 import PitchView        from "./components/PitchView.jsx";
 import ShotQuality      from "./components/ShotQuality.jsx";
-import CompetitionStats from "./components/CompetitionStats.jsx";
+import CompetitionStats  from "./components/CompetitionStats.jsx";
+import GoalkeeperStats  from "./components/GoalkeeperStats.jsx";
 import FormStrip        from "./components/FormStrip.jsx";
 import BettingPanel     from "./components/BettingPanel.jsx";
 import HomeAwaySplit    from "./components/HomeAwaySplit.jsx";
@@ -1401,6 +1402,11 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
       <div id="sec-maclar">
         <PlayerMatches playerId={playerId} milliyet={profile?.milliyet} competition={competition} />
       </div>
+
+      {/* ── Kaleci Analizi (sadece GK için göster) ── */}
+      {profile?.mevki?.includes("Goalkeeper") && (
+        <GoalkeeperStats playerId={playerId} />
+      )}
 
       {/* ════ PERFORMANS ANALİZİ ════ */}
       <div id="sec-analiz" style={S.sectionHeader}>
