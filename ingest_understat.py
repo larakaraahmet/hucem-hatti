@@ -101,7 +101,12 @@ def name_score(n1: str, n2: str) -> float:
     b = set(normalize_name(n2).split())
     if not a or not b:
         return 0.0
-    return len(a & b) / len(a | b)
+    jaccard = len(a & b) / len(a | b)
+    # Kısa isim uzun ismin alt kümesiyse (Ronaldo → Ronaldo dos Santos) → tam eşleşme say
+    shorter, longer = (a, b) if len(a) <= len(b) else (b, a)
+    if shorter and shorter.issubset(longer):
+        return 0.9
+    return jaccard
 
 def best_match(api_name: str, db_players: list[dict], threshold: float = 0.5) -> Optional[dict]:
     best_s, best_p = 0.0, None
