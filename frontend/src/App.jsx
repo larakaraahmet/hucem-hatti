@@ -6,7 +6,6 @@ import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom"
 import ComparePage from "./pages/ComparePage.jsx";
 import LeadersPage from "./pages/LeadersPage.jsx";
 import RadarChart       from "./components/RadarChart.jsx";
-import SimilarPlayers   from "./components/SimilarPlayers.jsx";
 import PlayerMatches    from "./components/PlayerMatches.jsx";
 import XGTimeline       from "./components/XGTimeline.jsx";
 import PercentileBars   from "./components/PercentileBars.jsx";
@@ -24,7 +23,6 @@ import OpponentProfile  from "./components/OpponentProfile.jsx";
 import MatchHighlights  from "./components/MatchHighlights.jsx";
 import MinutesImpact    from "./components/MinutesImpact.jsx";
 import AssistQuality      from "./components/AssistQuality.jsx";
-import SeasonProgression  from "./components/SeasonProgression.jsx";
 import FixtureList        from "./components/FixtureList.jsx";
 import Yardimetre         from "./components/Yardimetre.jsx";
 
@@ -953,15 +951,35 @@ function TeamPage({ ulke, onPlayerSelect, onBack }) {
 
 // Turnuva adından renk ve ikon
 const COMP_META = {
-  "FIFA World Cup":    { icon:"🌍", color:"#f59e0b" },
-  "UEFA Euro":        { icon:"⭐", color:"#38bdf8" },
-  "Copa América":     { icon:"🌟", color:"#a78bfa" },
-  "La Liga":          { icon:"🇪🇸", color:"#ef4444" },
-  "Ligue 1":          { icon:"🇫🇷", color:"#3b82f6" },
-  "Bundesliga":       { icon:"🇩🇪", color:"#f97316" },
-  "Champions League": { icon:"🏆", color:"#fbbf24" },
-  "Serie A":          { icon:"🇮🇹", color:"#10b981" },
-  "Premier League":   { icon:"🏴󠁧󠁢󠁥󠁮󠁧󠁿", color:"#8b5cf6" },
+  // Dünya kupası & kıta
+  "FIFA World Cup":         { icon:"🌍", color:"#f59e0b" },
+  "FIFA Dünya Kupası":      { icon:"🌍", color:"#f59e0b" },
+  "UEFA Avrupa Şampiyonası":{ icon:"⭐", color:"#38bdf8" },
+  "UEFA Euro":              { icon:"⭐", color:"#38bdf8" },
+  "Copa América":           { icon:"🌟", color:"#a78bfa" },
+  "Nations League":         { icon:"🏳️", color:"#64748b" },
+  // UEFA kulüp
+  "Champions League":       { icon:"🏆", color:"#fbbf24" },
+  "Europa League":          { icon:"🟠", color:"#f97316" },
+  "Conference League":      { icon:"🟢", color:"#10b981" },
+  // Büyük 5
+  "Premier League":         { icon:"🏴󠁧󠁢󠁥󠁮󠁧󠁿", color:"#8b5cf6" },
+  "La Liga":                { icon:"🇪🇸", color:"#ef4444" },
+  "Bundesliga":             { icon:"🇩🇪", color:"#f97316" },
+  "Serie A":                { icon:"🇮🇹", color:"#10b981" },
+  "Ligue 1":                { icon:"🇫🇷", color:"#3b82f6" },
+  // Diğer Avrupa
+  "Eredivisie":             { icon:"🇳🇱", color:"#f97316" },
+  "Primeira Liga":          { icon:"🇵🇹", color:"#16a34a" },
+  "Championship":           { icon:"🏴󠁧󠁢󠁥󠁮󠁧󠁿", color:"#7c3aed" },
+  "2. Bundesliga":          { icon:"🇩🇪", color:"#ea580c" },
+  "Segunda División":       { icon:"🇪🇸", color:"#dc2626" },
+  "Ligue 2":                { icon:"🇫🇷", color:"#2563eb" },
+  "Serie B":                { icon:"🇮🇹", color:"#059669" },
+  // Amerika
+  "Brasileirão":            { icon:"🇧🇷", color:"#16a34a" },
+  "Copa Libertadores":      { icon:"🌎", color:"#ca8a04" },
+  "MLS":                    { icon:"🇺🇸", color:"#1d4ed8" },
 };
 function compMeta(name) {
   for (const [k, v] of Object.entries(COMP_META))
@@ -969,49 +987,52 @@ function compMeta(name) {
   return { icon:"🏟️", color:"#64748b" };
 }
 
-// ─── Performans profili popup (isim yanında hover card) ──────────────────────
-function PerfPopup({ p90 }) {
+// ─── Performans profili popup — ismin üzerine gelinince açılır ───────────────
+function PerfPopup({ p90, children }) {
   const [open, setOpen] = useState(false);
   const metrics = [
     { l:"xG/90",  v: p90.xg90,    c:"#10b981" },
     { l:"xA/90",  v: p90.xa90,    c:"#38bdf8" },
     { l:"Gol/90", v: p90.gol90,   c:"#f59e0b" },
+    { l:"Asist/90", v: p90.asist90, c:"#f472b6" },
     { l:"Şut/90", v: p90.sut90,   c:"#a78bfa" },
   ];
   return (
-    <div style={{ position:"relative", display:"inline-block", marginLeft:8 }}
+    <div style={{ position:"relative", display:"inline-flex", alignItems:"center" }}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
-      <button style={{
-        background:"rgba(245,158,11,.12)", border:"1px solid rgba(245,158,11,.3)",
-        borderRadius:6, color:"#d97706", fontSize:10, fontWeight:800,
-        padding:"3px 9px", cursor:"default",
-        transition:"all .2s",
-        transform: open ? "scale(1.08)" : "scale(1)",
+      <div style={{
+        transition:"transform .2s, text-shadow .2s",
+        transform: open ? "scale(1.05)" : "scale(1)",
+        cursor:"default",
       }}>
-        📊 Performans
-      </button>
+        {children}
+      </div>
       {open && (
         <div style={{
-          position:"absolute", top:"calc(100% + 6px)", left:0,
+          position:"absolute", top:"calc(100% + 8px)", left:0,
           background:"#ffffff", border:"1px solid #e2e8f0",
-          borderRadius:12, padding:"12px 14px",
-          boxShadow:"0 8px 30px rgba(0,0,0,.12)",
-          zIndex:100, minWidth:180,
+          borderRadius:14, padding:"14px 16px",
+          boxShadow:"0 12px 40px rgba(0,0,0,.14)",
+          zIndex:200, minWidth:200,
           animation:"hh-fadein .15s ease",
+          pointerEvents:"none",
         }}>
+          <div style={{ fontSize:10, fontWeight:700, color:"#94a3b8", letterSpacing:".08em", marginBottom:10 }}>
+            📊 PERFORMANS PROFİLİ
+          </div>
           {metrics.map(({l,v,c}) => (
-            <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+            <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7 }}>
               <span style={{ fontSize:11, color:"#64748b" }}>{l}</span>
               <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                 <div style={{
-                  width: Math.min((v ?? 0) * 40, 60),
+                  width: Math.min((v ?? 0) * 50, 70),
                   height:4, borderRadius:2,
-                  background: c, opacity:.7,
+                  background: c, opacity:.75,
                   transition:"width .3s",
                 }} />
-                <span style={{ fontSize:12, fontWeight:800, color:"#0f172a", minWidth:32, textAlign:"right" }}>
+                <span style={{ fontSize:12, fontWeight:800, color:"#0f172a", minWidth:34, textAlign:"right" }}>
                   {(v ?? 0).toFixed(2)}
                 </span>
               </div>
@@ -1133,10 +1154,12 @@ function PlayerPage({ playerId, playerName, onBack }) {
 
         <div style={{ flex:1, minWidth:0 }}>
           <div style={S.heroNameRow}>
-            <h2 style={S.heroName}>{profile?.isim ?? playerName}</h2>
-            {/* Performans profili popup */}
-            {p90 && Object.values(p90).some(v => v > 0) && (
-              <PerfPopup p90={p90} />
+            {p90 && Object.values(p90).some(v => v > 0) ? (
+              <PerfPopup p90={p90}>
+                <h2 style={S.heroName}>{profile?.isim ?? playerName}</h2>
+              </PerfPopup>
+            ) : (
+              <h2 style={S.heroName}>{profile?.isim ?? playerName}</h2>
             )}
           </div>
           <div style={S.badgesRow}>
@@ -1219,38 +1242,55 @@ function PlayerPage({ playerId, playerName, onBack }) {
         )}
       </div>
 
-      {/* ── Lig / Turnuva filtresi — EN ÜSTTE ── */}
-      {comps.length > 0 && (
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize:10, fontWeight:700, color:"#94a3b8", marginBottom:6, letterSpacing:".06em" }}>
-            TURNUVA / LİG FİLTRESİ
-          </div>
-          <div style={S.compFilter}>
-            <button
-              onClick={() => setComp(null)}
-              style={{ ...S.compChip, ...(competition === null ? S.compChipActive : {}) }}
+      {/* ── Lig / Turnuva filtresi — gruplu ── */}
+      {comps.length > 0 && (() => {
+        const MILLI_KEYS = ["World Cup","Euro","Copa","Africa","Nations League","Qualifier","Qualifying","CONMEBOL","CONCACAF","AFC","CAF","AFCON","Gold Cup","Eleme"];
+        const isMilli = t => MILLI_KEYS.some(k => t?.includes(k));
+        const milliComps = comps.filter(c => isMilli(c.turnuva));
+        const kuluepComps = comps.filter(c => !isMilli(c.turnuva));
+        const renderChips = (list) => list.map(c => {
+          const meta = compMeta(c.turnuva);
+          const isAct = competition === c.turnuva;
+          return (
+            <button key={c.turnuva}
+              onClick={() => setComp(isAct ? null : c.turnuva)}
+              style={{
+                ...S.compChip,
+                ...(isAct ? { ...S.compChipActive, borderColor: meta.color + "66", background: meta.color + "18", color: meta.color } : {}),
+              }}
             >
-              🌐 Tümü
+              {meta.icon} {c.turnuva}
+              <span style={{ opacity:.6, fontSize:9, marginLeft:4 }}>{c.mac_sayisi}m</span>
             </button>
-            {comps.map(c => {
-              const meta  = compMeta(c.turnuva);
-              const isAct = competition === c.turnuva;
-              return (
-                <button key={c.turnuva}
-                  onClick={() => setComp(isAct ? null : c.turnuva)}
-                  style={{
-                    ...S.compChip,
-                    ...(isAct ? { ...S.compChipActive, borderColor: meta.color + "66", background: meta.color + "18", color: meta.color } : {}),
-                  }}
-                >
-                  {meta.icon} {c.turnuva}
-                  <span style={{ opacity:.6, fontSize:9, marginLeft:4 }}>{c.mac_sayisi}m</span>
-                </button>
-              );
-            })}
+          );
+        });
+        return (
+          <div style={{ marginBottom:14 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+              <button onClick={() => setComp(null)}
+                style={{ ...S.compChip, ...(competition === null ? S.compChipActive : {}) }}>
+                🌐 Tümü
+              </button>
+            </div>
+            {milliComps.length > 0 && (
+              <div style={{ marginBottom:8 }}>
+                <div style={{ fontSize:9, fontWeight:700, color:"#94a3b8", letterSpacing:".08em", marginBottom:5 }}>
+                  MİLLİ TAKIM
+                </div>
+                <div style={S.compFilter}>{renderChips(milliComps)}</div>
+              </div>
+            )}
+            {kuluepComps.length > 0 && (
+              <div>
+                <div style={{ fontSize:9, fontWeight:700, color:"#94a3b8", letterSpacing:".08em", marginBottom:5 }}>
+                  KULÜP
+                </div>
+                <div style={S.compFilter}>{renderChips(kuluepComps)}</div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Bölüm navigasyonu ── */}
       <SectionNav />

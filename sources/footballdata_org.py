@@ -44,33 +44,64 @@ _HEADERS  = {"X-Auth-Token": _API_KEY}
 
 # Standart lig kodu → football-data.org competition code eşlemesi
 _LIG_MAP: dict[str, str] = {
+    # Büyük 5 Avrupa ligi
     "EPL":         "PL",    # Premier League
     "LaLiga":      "PD",    # Primera Division
     "Bundesliga":  "BL1",   # 1. Bundesliga
     "SerieA":      "SA",    # Serie A
     "Ligue1":      "FL1",   # Ligue 1
+    # UEFA kulüp turnuvaları
     "UCL":         "CL",    # UEFA Champions League
     "UEL":         "EL",    # UEFA Europa League
     "UECL":        "UECL",  # UEFA Conference League
+    # Diğer Avrupa ligleri
+    "Eredivisie":  "DED",   # Netherlands Eredivisie
+    "PrimeiraLiga":"PPL",   # Portugal Primeira Liga
+    "Championship":"ELC",   # England Championship
+    "Bundesliga2": "BL2",   # 2. Bundesliga
+    "LaLiga2":     "PD2",   # Segunda Division
+    "SerieB":      "SB",    # Serie B İtalya
+    "Ligue2":      "FL2",   # Ligue 2
+    "BelgianPro":  "BSA",   # Belgian Pro League
+    "ScottishPrem":"PPL",   # Scottish Premiership (PPL kodu çakışabilir)
+    # Avrupa milli takım
     "Euro":        "EC",    # UEFA European Championship
+    "NationsLeague": "UNL", # UEFA Nations League
+    # Dünya kupası
     "WC":          "WC",    # FIFA World Cup
+    # Amerika ligleri
+    "Brasileirao": "BSA",   # Brasileirão Serie A
+    "Libertadores":"CLI",   # Copa Libertadores
+    "MLS":         "MLS",   # Major League Soccer
 }
 
 # Turnuva görünen adları
 _TURNUVA_ISIMLERI: dict[str, str] = {
-    "EPL":        "Premier League",
-    "LaLiga":     "La Liga",
-    "Bundesliga": "Bundesliga",
-    "SerieA":     "Serie A",
-    "Ligue1":     "Ligue 1",
-    "UCL":        "UEFA Champions League",
-    "UEL":        "UEFA Europa League",
-    "UECL":       "UEFA Conference League",
-    "Euro":       "UEFA European Championship",
-    "WC":         "FIFA World Cup",
+    "EPL":          "Premier League",
+    "LaLiga":       "La Liga",
+    "Bundesliga":   "Bundesliga",
+    "SerieA":       "Serie A",
+    "Ligue1":       "Ligue 1",
+    "UCL":          "UEFA Champions League",
+    "UEL":          "UEFA Europa League",
+    "UECL":         "UEFA Conference League",
+    "Eredivisie":   "Eredivisie",
+    "PrimeiraLiga": "Primeira Liga",
+    "Championship": "Championship",
+    "Bundesliga2":  "2. Bundesliga",
+    "LaLiga2":      "Segunda División",
+    "SerieB":       "Serie B",
+    "Ligue2":       "Ligue 2",
+    "BelgianPro":   "Belgian Pro League",
+    "Euro":         "UEFA Avrupa Şampiyonası",
+    "NationsLeague":"UEFA Nations League",
+    "WC":           "FIFA Dünya Kupası",
+    "Brasileirao":  "Brasileirão",
+    "Libertadores": "Copa Libertadores",
+    "MLS":          "MLS",
 }
 
-_SEZONLAR = ["2020", "2021", "2022", "2023", "2024"]
+_SEZONLAR = ["2020", "2021", "2022", "2023", "2024", "2025"]
 
 # API rate limit: ücretsiz planda 10 istek/dk → istekler arası 6 saniye bekle
 _RATE_DELAY = 6.5
@@ -121,24 +152,26 @@ class FootballDataOrgSource(BaseSource):
         comp_code = _LIG_MAP[league]
         turnuva   = f"{_TURNUVA_ISIMLERI.get(league, league)} {season}"
 
-        # TODO: Implement actual API call
-        # Endpoint: GET /v4/competitions/{code}/matches?season={year}
-        # Dönen JSON: {"matches": [...], "competition": {...}}
-        #
-        # Örnek çağrı (şu an placeholder):
-        #   url = f"{_BASE_URL}/competitions/{comp_code}/matches"
-        #   params = {"season": season}
-        #   resp = requests.get(url, headers=_HEADERS, params=params, timeout=15)
-        #   resp.raise_for_status()
-        #   data = resp.json()
-        #   for mac in data.get("matches", []):
-        #       record = _mac_to_record(mac, league, season, turnuva, self.name)
-        #       if record:
-        #           result.matches.append(record)
-        #   time.sleep(_RATE_DELAY)
+        import requests as _req
+        url = f"{_BASE_URL}/competitions/{comp_code}/matches"
+        params = {"season": season}
+        try:
+            resp = _req.get(url, headers={"X-Auth-Token": self._api_key}, params=params, timeout=15)
+            if resp.status_code == 403:
+                result.errors.append(f"API erişim reddedildi (403) — ücretsiz planda {comp_code} desteklenmeyebilir.")
+                return result
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as exc:
+            result.errors.append(f"API isteği başarısız: {exc}")
+            return result
 
-        # Gerçek implementasyon bir sonraki adımda yapılacak.
-        result.errors.append("TODO: footballdata_org fetch() henüz implemente edilmedi.")
+        for mac in data.get("matches", []):
+            record = _mac_to_record(mac, league, season, turnuva, self.name)
+            if record:
+                result.matches.append(record)
+
+        time.sleep(_RATE_DELAY)
         return result
 
 

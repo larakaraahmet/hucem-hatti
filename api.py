@@ -5,6 +5,7 @@ Oyuncu profili, benzerlik, şut haritası ve radar verisi endpoint'leri.
 
 import json as _json
 import os
+import time
 import urllib.parse
 import urllib.request
 from contextlib import asynccontextmanager
@@ -41,6 +42,7 @@ _engine: Engine | None = None
 _NTFY_TOPIC = os.getenv("NTFY_TOPIC", "")
 _last_notif_search: str = ""   # aynı sorguyu tekrar bildirme
 _last_visit_time: float = 0.0  # son ziyaret bildirimi zamanı (rate-limit)
+_last_player_notif: dict[int, float] = {}  # player_id → son bildirim zamanı (60s cooldown)
 
 
 def _ntfy(baslik: str, mesaj: str) -> None:
@@ -285,7 +287,15 @@ def _metrics_or_404(player_id: int, engine: Engine) -> dict:
 def get_player_profile(player_id: int, engine: Engine = Depends(get_engine)):
     base    = _fetch_player_base(player_id, engine)
     metrics = _metrics_or_404(player_id, engine)
-    _ntfy("Oyuncu goruntulendi", f"{base.get('isim', str(player_id))}")
+    # 60 saniye içinde aynı oyuncu tekrar açılırsa bildirim gönderme
+    now = time.time()
+    if now - _last_player_notif.get(player_id, 0) > 60:
+        _last_player_notif[player_id] = now
+        isim = base.get("isim", str(player_id))
+        mevki = base.get("mevki") or ""
+        milliyet = base.get("milliyet") or ""
+        detay = " | ".join(filter(None, [mevki, milliyet]))
+        _ntfy(f"👤 {isim}", detay if detay else "Oyuncu profili açıldı")
 
     # Kulüp takımı ve ligi bul
     club_takim = club_lig = None
@@ -476,7 +486,8 @@ def get_player_matches(
 def get_player_competitions(player_id: int, engine: Engine = Depends(get_engine)):
     _fetch_player_base(player_id, engine)
     with engine.connect() as conn:
-        rows = conn.execute(text("""
+        # Maç bazlı kayıtlar (StatsBomb)
+        match_rows = conn.execute(text("""
             SELECT
                 m.turnuva,
                 COUNT(*)                            AS mac_sayisi,
@@ -489,7 +500,31 @@ def get_player_competitions(player_id: int, engine: Engine = Depends(get_engine)
             GROUP BY m.turnuva
             ORDER BY MIN(m.tarih) DESC
         """), {"player_id": player_id}).mappings().fetchall()
-    return [dict(r) for r in rows]
+
+        # Sezon aggregate kayıtlar (Understat / FBref) — turnuva adı olarak "Lig Sezon" kullan
+        ext_rows = conn.execute(text("""
+            SELECT
+                lig || ' ' || sezon          AS turnuva,
+                COALESCE(mac_sayisi, 0)      AS mac_sayisi,
+                COALESCE(dakika,     0)      AS dakika,
+                COALESCE(gol,        0)      AS gol,
+                COALESCE(asist,      0)      AS asist
+            FROM player_external_stats
+            WHERE oyuncu_id = :player_id
+            ORDER BY sezon DESC
+        """), {"player_id": player_id}).mappings().fetchall()
+
+    # Birleştir — match_rows önce, ardından external (duplicate turnuva adı atla)
+    seen = set()
+    result = []
+    for r in match_rows:
+        seen.add(r["turnuva"])
+        result.append(dict(r))
+    for r in ext_rows:
+        if r["turnuva"] not in seen:
+            seen.add(r["turnuva"])
+            result.append(dict(r))
+    return result
 
 
 @app.get(
