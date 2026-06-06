@@ -987,15 +987,15 @@ function compMeta(name) {
   return { icon:"🏟️", color:"#64748b" };
 }
 
-// ─── Performans profili popup — ismin üzerine gelinince açılır ───────────────
-function PerfPopup({ p90, children }) {
+// ─── Performans profili popup — hero kartı sağında ikon, hover'da açılır ──────
+function PerfPopup({ p90 }) {
   const [open, setOpen] = useState(false);
   const metrics = [
-    { l:"xG/90",  v: p90.xg90,    c:"#10b981" },
-    { l:"xA/90",  v: p90.xa90,    c:"#38bdf8" },
-    { l:"Gol/90", v: p90.gol90,   c:"#f59e0b" },
+    { l:"xG/90",    v: p90.xg90,    c:"#10b981" },
+    { l:"xA/90",    v: p90.xa90,    c:"#38bdf8" },
+    { l:"Gol/90",   v: p90.gol90,   c:"#f59e0b" },
     { l:"Asist/90", v: p90.asist90, c:"#f472b6" },
-    { l:"Şut/90", v: p90.sut90,   c:"#a78bfa" },
+    { l:"Şut/90",   v: p90.sut90,   c:"#a78bfa" },
   ];
   return (
     <div style={{ position:"relative", display:"inline-flex", alignItems:"center" }}
@@ -1003,19 +1003,23 @@ function PerfPopup({ p90, children }) {
       onMouseLeave={() => setOpen(false)}
     >
       <div style={{
-        transition:"transform .2s, text-shadow .2s",
-        transform: open ? "scale(1.05)" : "scale(1)",
-        cursor:"default",
+        width:32, height:32, borderRadius:8,
+        background: open ? "rgba(245,158,11,.18)" : "rgba(245,158,11,.08)",
+        border: `1px solid ${open ? "rgba(245,158,11,.5)" : "rgba(245,158,11,.2)"}`,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        cursor:"default", fontSize:15,
+        transform: open ? "scale(1.18)" : "scale(1)",
+        transition:"all .18s",
       }}>
-        {children}
+        📊
       </div>
       {open && (
         <div style={{
-          position:"absolute", top:"calc(100% + 8px)", left:0,
+          position:"absolute", top:"calc(100% + 8px)", right:0,
           background:"#ffffff", border:"1px solid #e2e8f0",
           borderRadius:14, padding:"14px 16px",
           boxShadow:"0 12px 40px rgba(0,0,0,.14)",
-          zIndex:200, minWidth:200,
+          zIndex:200, minWidth:210,
           animation:"hh-fadein .15s ease",
           pointerEvents:"none",
         }}>
@@ -1154,12 +1158,9 @@ function PlayerPage({ playerId, playerName, onBack }) {
 
         <div style={{ flex:1, minWidth:0 }}>
           <div style={S.heroNameRow}>
-            {p90 && Object.values(p90).some(v => v > 0) ? (
-              <PerfPopup p90={p90}>
-                <h2 style={S.heroName}>{profile?.isim ?? playerName}</h2>
-              </PerfPopup>
-            ) : (
-              <h2 style={S.heroName}>{profile?.isim ?? playerName}</h2>
+            <h2 style={S.heroName}>{profile?.isim ?? playerName}</h2>
+            {p90 && Object.values(p90).some(v => v > 0) && (
+              <PerfPopup p90={p90} />
             )}
           </div>
           <div style={S.badgesRow}>
@@ -1677,7 +1678,7 @@ const S = {
     border:"2px solid #e2e8f0",
     boxShadow:"0 2px 8px rgba(0,0,0,.1)",
   },
-  heroNameRow: { display:"flex", alignItems:"center", gap:12, marginBottom:8 },
+  heroNameRow: { display:"flex", alignItems:"center", gap:12, marginBottom:8, justifyContent:"space-between" },
   heroName: { fontSize:22, fontWeight:900, color:"#0f172a" },
   badgesRow: { display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 },
   badgeGold: {
