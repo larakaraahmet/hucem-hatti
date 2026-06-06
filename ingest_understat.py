@@ -388,23 +388,28 @@ def ingest_shots(
                 # Turnuva adı: "La Liga 2025/26" formatında
                 turnuva_adi = f"{lig_tr} {sezon}/{str(sezon+1)[-2:]}"
 
+                if not home_team or not away_team:
+                    stats["atildi"] += 1
+                    continue
+
                 with engine.begin() as conn:
-                    # us_{id} veya turnuva adıyla ara
+                    home_id = get_or_create_team(conn, home_team, lig_tr)
+                    away_id = get_or_create_team(conn, away_team, lig_tr)
+                    if not home_id or not away_id or home_id == away_id:
+                        stats["atildi"] += 1
+                        continue
+
+                    # Spesifik maçı tarih + ev + dep ile ara (turnuva adıyla değil)
                     existing = conn.execute(text("""
                         SELECT id FROM matches
-                        WHERE (turnuva = :tur_id OR turnuva = :tur_ad)
-                          AND source = 'understat' LIMIT 1
-                    """), {"tur_id": f"us_{us_match_id}", "tur_ad": turnuva_adi}).fetchone()
+                        WHERE tarih = :tarih
+                          AND ev_takim_id = :ev
+                          AND deplasman_takim_id = :dep
+                          AND source = 'understat'
+                        LIMIT 1
+                    """), {"tarih": match_date, "ev": home_id, "dep": away_id}).fetchone()
 
                     if not existing:
-                        if not home_team or not away_team:
-                            stats["atildi"] += 1
-                            continue
-                        home_id = get_or_create_team(conn, home_team, lig_tr)
-                        away_id = get_or_create_team(conn, away_team, lig_tr)
-                        if not home_id or not away_id or home_id == away_id:
-                            stats["atildi"] += 1
-                            continue
                         mac_result = conn.execute(text("""
                             INSERT INTO matches (tarih, ev_takim_id, deplasman_takim_id, turnuva, source)
                             VALUES (:t, :ev, :dep, :tur, 'understat')
@@ -417,10 +422,6 @@ def ingest_shots(
                         mac_id = mac_result[0]
                     else:
                         mac_id = existing[0]
-                        # Eski us_xxx turnuva adını güncelle
-                        conn.execute(text("""
-                            UPDATE matches SET turnuva = :tur WHERE id = :id AND turnuva LIKE 'us_%'
-                        """), {"tur": turnuva_adi, "id": mac_id})
 
                     shot_id = str(_col(row, "shot_id", "id", default=""))
                     ext_id  = f"us_{shot_id}" if shot_id else None
