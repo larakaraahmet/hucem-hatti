@@ -1312,3 +1312,24 @@ def ntfy_test():
     topic = _NTFY_TOPIC or "(boş)"
     _ntfy("Test", "Hucem Hatti ntfy calisiyor!")
     return {"ntfy_topic": topic, "sent": bool(topic)}
+
+
+# ── Şifre koruması ────────────────────────────────────────────────────────────
+_SITE_PASSWORD = os.getenv("SITE_PASSWORD", "")
+
+
+class LoginRequest(BaseModel):
+    sifre: str
+
+
+@app.post("/auth/login", summary="Site şifresini doğrular")
+def auth_login(req: LoginRequest):
+    if not _SITE_PASSWORD:
+        return {"ok": True}  # şifre tanımlı değilse açık bırak
+
+    if req.sifre == _SITE_PASSWORD:
+        _ntfy("🔑 Doğru şifre", f'Biri siteye giriş yaptı')
+        return {"ok": True}
+    else:
+        _ntfy("❌ Yanlış şifre", f'Girilen: "{req.sifre}"')
+        return {"ok": False}

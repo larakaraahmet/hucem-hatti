@@ -1400,8 +1400,98 @@ function PlayerPage({ playerId, playerName, onBack }) {
   );
 }
 
+// ─── Şifre ekranı ─────────────────────────────────────────────────────────────
+function PasswordGate({ onAuth }) {
+  const [sifre,  setSifre]  = useState("");
+  const [hata,   setHata]   = useState("");
+  const [loading, setLoad]  = useState(false);
+
+  const gonder = async (e) => {
+    e.preventDefault();
+    if (!sifre.trim()) return;
+    setLoad(true); setHata("");
+    try {
+      const r = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sifre }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        sessionStorage.setItem("hh_auth", "1");
+        onAuth();
+      } else {
+        setHata("Yanlış şifre. Tekrar dene.");
+        setSifre("");
+      }
+    } catch {
+      setHata("Bağlantı hatası.");
+    } finally {
+      setLoad(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position:"fixed", inset:0, zIndex:9999,
+      background:"linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0f172a 100%)",
+      display:"flex", flexDirection:"column",
+      alignItems:"center", justifyContent:"center",
+    }}>
+      <div style={{ marginBottom:32, textAlign:"center" }}>
+        <div style={{ fontSize:42, fontWeight:900, letterSpacing:"-1px", color:"#fff" }}>
+          <span style={{ color:"#38bdf8" }}>Hü</span>
+          <span style={{ color:"#f59e0b" }}>C</span>
+          <span style={{ color:"#38bdf8" }}>em</span>
+          <span style={{ color:"#fff" }}> Hattı</span>
+        </div>
+        <div style={{ fontSize:12, color:"#64748b", marginTop:6, letterSpacing:".1em" }}>
+          2026 FIFA DÜNYA KUPASI · OYUNCU ANALİZ PLATFORMU
+        </div>
+      </div>
+
+      <form onSubmit={gonder} style={{
+        background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.1)",
+        borderRadius:16, padding:"28px 32px", width:320,
+        display:"flex", flexDirection:"column", gap:14,
+        backdropFilter:"blur(12px)",
+      }}>
+        <div style={{ fontSize:13, color:"#94a3b8", textAlign:"center", marginBottom:4 }}>
+          🔐 Erişim şifresi
+        </div>
+        <input
+          type="password"
+          value={sifre}
+          onChange={e => setSifre(e.target.value)}
+          placeholder="Şifre"
+          autoFocus
+          style={{
+            background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.15)",
+            borderRadius:9, color:"#fff", fontSize:14, padding:"11px 14px",
+            outline:"none", width:"100%", boxSizing:"border-box",
+            letterSpacing:".08em",
+          }}
+        />
+        {hata && (
+          <div style={{ fontSize:12, color:"#f87171", textAlign:"center" }}>{hata}</div>
+        )}
+        <button type="submit" disabled={loading} style={{
+          background:"#3b82f6", border:"none", borderRadius:9,
+          color:"#fff", fontSize:13, fontWeight:700, padding:"11px",
+          cursor: loading ? "not-allowed" : "pointer",
+          opacity: loading ? .7 : 1,
+          transition:"opacity .2s",
+        }}>
+          {loading ? "Doğrulanıyor…" : "Giriş"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 // ─── Ana uygulama ─────────────────────────────────────────────────────────────
 export default function App() {
+  const [auth,      setAuth]      = useState(!!sessionStorage.getItem("hh_auth"));
   const [splashDone, setSplashDone] = useState(false);
   const [page,       setPage]       = useState("teams");
   const [selTeam,    setSelTeam]    = useState(null);
@@ -1423,6 +1513,8 @@ export default function App() {
     navigate("/");
   };
   const goTeam   = ulke => { setSelTeam(ulke); setPage("team"); navigate("/"); };
+
+  if (!auth) return <PasswordGate onAuth={() => setAuth(true)} />;
 
   return (
     <>
