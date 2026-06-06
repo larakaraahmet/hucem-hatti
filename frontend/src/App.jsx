@@ -1228,15 +1228,12 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
   const [competition, setComp]      = useState(null); // null = tümü
   const [market,     setMarket]     = useState(null);
   const [xgTrend,    setXgTrend]    = useState([]);
-  const [insight,    setInsight]    = useState(null);
-  const [insightLoading, setInsightLoading] = useState(false);
-  const [insightOpen,    setInsightOpen]    = useState(false);
   const photoUrl = usePlayerPhoto(playerId);
 
   useEffect(() => {
     if (!playerId) return;
     setProfile(null); setArchetype(null); setComps([]); setComp(null);
-    setMarket(null);  setXgTrend([]);    setInsight(null); setInsightOpen(false);
+    setMarket(null);  setXgTrend([]);
 
     fetch(`${API_BASE}/player/${playerId}`)
       .then(r => r.ok ? r.json() : null).then(setProfile).catch(() => {});
@@ -1250,15 +1247,6 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
     fetch(`${API_BASE}/player/${playerId}/xg-trend`)
       .then(r => r.ok ? r.json() : []).then(d => setXgTrend(Array.isArray(d) ? d : [])).catch(() => {});
   }, [playerId]);
-
-  const fetchInsight = () => {
-    if (insight || insightLoading) { setInsightOpen(o => !o); return; }
-    setInsightLoading(true); setInsightOpen(true);
-    fetch(`${API_BASE}/player/${playerId}/insight`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { setInsight(d?.insight ?? d?.text ?? JSON.stringify(d)); setInsightLoading(false); })
-      .catch(() => { setInsight("Yorum alınamadı."); setInsightLoading(false); });
-  };
 
   const p90 = profile?.per90;
 
@@ -1352,32 +1340,6 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
         </div>
       </div>
 
-      {/* ── Claude AI Yorumu ── */}
-      <div style={{ marginBottom: 12 }}>
-        <button onClick={fetchInsight} style={{
-          display:"flex", alignItems:"center", gap:7,
-          padding:"8px 16px", borderRadius:8, cursor:"pointer",
-          background: insightOpen ? "#fef3c7" : "#ffffff",
-          border:`1px solid ${insightOpen ? "#fde68a" : "#e2e8f0"}`,
-          fontSize:11, fontWeight:700, color: insightOpen ? "#d97706" : "#64748b",
-          transition:"all .2s",
-        }}>
-          🤖 Claude Analizi {insightLoading ? "…" : insightOpen ? "▲" : "▼"}
-        </button>
-        {insightOpen && (
-          <div style={{
-            marginTop:8, padding:"14px 16px",
-            background:"#fffbeb", border:"1px solid #fde68a",
-            borderRadius:10, fontSize:12, lineHeight:1.7, color:"#0f172a",
-          }}>
-            {insightLoading
-              ? <span style={{ color:"#94a3b8" }}>🤖 Claude analiz hazırlıyor…</span>
-              : insight ?? <span style={{ color:"#94a3b8" }}>Yorum bulunamadı.</span>
-            }
-          </div>
-        )}
-      </div>
-
       {/* ── Lig / Turnuva filtresi — gruplu ── */}
       {comps.length > 0 && (() => {
         const MILLI_KEYS = ["World Cup","Euro","Copa","Africa","Nations League","Qualifier","Qualifying","CONMEBOL","CONCACAF","AFC","CAF","AFCON","Gold Cup","Eleme"];
@@ -1387,16 +1349,20 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
         const renderChips = (list) => list.map(c => {
           const meta = compMeta(c.turnuva);
           const isAct = competition === c.turnuva;
+          const hasMatches = c.has_match_data !== false; // undefined de true sayılır (geriye uyum)
           return (
             <button key={c.turnuva}
               onClick={() => setComp(isAct ? null : c.turnuva)}
+              title={hasMatches ? undefined : "Sadece sezon özeti — maç bazlı veri yok"}
               style={{
                 ...S.compChip,
                 ...(isAct ? { ...S.compChipActive, borderColor: meta.color + "66", background: meta.color + "18", color: meta.color } : {}),
+                ...(hasMatches ? {} : { opacity: 0.65, borderStyle: "dashed" }),
               }}
             >
               {meta.icon} {c.turnuva}
               <span style={{ opacity:.6, fontSize:9, marginLeft:4 }}>{c.mac_sayisi}m</span>
+              {!hasMatches && <span style={{ fontSize:8, opacity:.5, marginLeft:3 }}>Σ</span>}
             </button>
           );
         });

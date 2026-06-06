@@ -453,6 +453,7 @@ def get_player_matches(
 ):
     _fetch_player_base(player_id, engine)
     with engine.connect() as conn:
+        # Birincil kaynak: player_match_stats (StatsBomb + shots aggregate)
         rows = conn.execute(text("""
             SELECT
                 m.id              AS mac_id,
@@ -461,9 +462,9 @@ def get_player_matches(
                 t1.isim           AS ev_takim,
                 t2.isim           AS deplasman_takim,
                 pms.dakika,
-                COALESCE(pms.gol,         0) AS gol,
-                COALESCE(pms.asist,       0) AS asist,
-                COALESCE(pms.sut,         0) AS sut,
+                COALESCE(pms.gol,             0) AS gol,
+                COALESCE(pms.asist,           0) AS asist,
+                COALESCE(pms.sut,             0) AS sut,
                 COALESCE(pms.isabetli_sut,    0) AS isabetli_sut,
                 pms.xg,
                 pms.xa,
@@ -476,6 +477,36 @@ def get_player_matches(
               AND (:turnuva IS NULL OR m.turnuva = :turnuva)
             ORDER BY m.tarih DESC
         """), {"player_id": player_id, "turnuva": turnuva}).mappings().fetchall()
+
+        # Fallback: player_match_stats boşsa shots tablosundan maç başına aggregate yap.
+        # Bu durum; ingest_club_match_stats.py çalıştırılmamış ama shot ingest tamamlanmış
+        # sezonlar için geçerlidir (ör. La Liga 2025/26 shots var, pms yok).
+        if not rows:
+            rows = conn.execute(text("""
+                SELECT
+                    m.id              AS mac_id,
+                    m.tarih::text     AS tarih,
+                    m.turnuva,
+                    t1.isim           AS ev_takim,
+                    t2.isim           AS deplasman_takim,
+                    NULL::int         AS dakika,
+                    COALESCE(SUM(CASE WHEN s.gol_mu THEN 1 ELSE 0 END), 0)  AS gol,
+                    0                                                         AS asist,
+                    COUNT(s.id)                                               AS sut,
+                    COALESCE(SUM(CASE WHEN s.gol_mu THEN 1 ELSE 0 END), 0)  AS isabetli_sut,
+                    ROUND(SUM(COALESCE(s.xg, 0))::numeric, 3)               AS xg,
+                    NULL::numeric                                             AS xa,
+                    0                                                         AS progressive_pass
+                FROM shots s
+                JOIN matches m  ON m.id  = s.mac_id
+                JOIN teams   t1 ON t1.id = m.ev_takim_id
+                JOIN teams   t2 ON t2.id = m.deplasman_takim_id
+                WHERE s.oyuncu_id = :player_id
+                  AND (:turnuva IS NULL OR m.turnuva = :turnuva)
+                GROUP BY m.id, m.tarih, m.turnuva, t1.isim, t2.isim
+                ORDER BY m.tarih DESC
+            """), {"player_id": player_id, "turnuva": turnuva}).mappings().fetchall()
+
     return [PlayerMatchRecord(**dict(r)) for r in rows]
 
 
@@ -486,44 +517,86 @@ def get_player_matches(
 def get_player_competitions(player_id: int, engine: Engine = Depends(get_engine)):
     _fetch_player_base(player_id, engine)
     with engine.connect() as conn:
-        # Maç bazlı kayıtlar (StatsBomb)
+        # Maç bazlı kayıtlar — player_match_stats'ta olan turnuvalar (maç listesi gösterilebilir)
         match_rows = conn.execute(text("""
             SELECT
                 m.turnuva,
                 COUNT(*)                            AS mac_sayisi,
                 SUM(COALESCE(pms.dakika,  0))       AS dakika,
                 SUM(COALESCE(pms.gol,     0))       AS gol,
-                SUM(COALESCE(pms.asist,   0))       AS asist
+                SUM(COALESCE(pms.asist,   0))       AS asist,
+                MAX(m.tarih)                        AS son_mac
             FROM player_match_stats pms
             JOIN matches m ON m.id = pms.mac_id
             WHERE pms.oyuncu_id = :player_id
             GROUP BY m.turnuva
-            ORDER BY MIN(m.tarih) DESC
         """), {"player_id": player_id}).mappings().fetchall()
 
-        # Sezon aggregate kayıtlar (Understat / FBref) — turnuva adı olarak "Lig Sezon" kullan
+        # shots tablosundan pms'te olmayan turnuvalar (fallback veri var)
+        shot_rows = conn.execute(text("""
+            SELECT
+                m.turnuva,
+                COUNT(DISTINCT m.id)               AS mac_sayisi,
+                0                                  AS dakika,
+                SUM(CASE WHEN s.gol_mu THEN 1 ELSE 0 END) AS gol,
+                0                                  AS asist,
+                MAX(m.tarih)                       AS son_mac
+            FROM shots s
+            JOIN matches m ON m.id = s.mac_id
+            WHERE s.oyuncu_id = :player_id
+            GROUP BY m.turnuva
+        """), {"player_id": player_id}).mappings().fetchall()
+
+        # Sezon aggregate kayıtlar (Understat / FBref) — yalnızca maç verisi olmayan sezonlar için
         ext_rows = conn.execute(text("""
             SELECT
                 lig || ' ' || sezon          AS turnuva,
                 COALESCE(mac_sayisi, 0)      AS mac_sayisi,
                 COALESCE(dakika,     0)      AS dakika,
                 COALESCE(gol,        0)      AS gol,
-                COALESCE(asist,      0)      AS asist
+                COALESCE(asist,      0)      AS asist,
+                NULL                         AS son_mac
             FROM player_external_stats
             WHERE oyuncu_id = :player_id
             ORDER BY sezon DESC
         """), {"player_id": player_id}).mappings().fetchall()
 
-    # Birleştir — match_rows önce, ardından external (duplicate turnuva adı atla)
-    seen = set()
+    # Birleştir: pms öncelikli, shots ikincil, ext_stats yalnızca veri yoksa eklenir
+    # has_match_data: frontend'in maç listesi gösterip göstermeyeceğini bilmesi için
+    seen: set[str] = set()
     result = []
+
     for r in match_rows:
         seen.add(r["turnuva"])
-        result.append(dict(r))
+        result.append({**dict(r), "has_match_data": True})
+
+    for r in shot_rows:
+        if r["turnuva"] not in seen:
+            seen.add(r["turnuva"])
+            result.append({**dict(r), "has_match_data": True})
+
     for r in ext_rows:
         if r["turnuva"] not in seen:
             seen.add(r["turnuva"])
-            result.append(dict(r))
+            result.append({**dict(r), "has_match_data": False})
+
+    import datetime as _dt
+    def _sort_key(x):
+        v = x.get("son_mac")
+        if v is None:
+            return _dt.date(1900, 1, 1)
+        if isinstance(v, str):
+            try:
+                return _dt.date.fromisoformat(v[:10])
+            except Exception:
+                return _dt.date(1900, 1, 1)
+        return v  # already datetime.date
+
+    result.sort(key=_sort_key, reverse=True)
+    # son_mac JSON serialization için string'e çevir
+    for r in result:
+        if isinstance(r.get("son_mac"), _dt.date):
+            r["son_mac"] = r["son_mac"].isoformat()
     return result
 
 

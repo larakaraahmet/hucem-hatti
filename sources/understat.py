@@ -44,8 +44,8 @@ _LIG_MAP: dict[str, str] = {
     "Ligue1":     "FRA-Ligue 1",
 }
 
-# Desteklenen sezonlar (başlangıç yılı)
-_SEZONLAR = ["2020", "2021", "2022", "2023", "2024"]
+# Desteklenen sezonlar (başlangıç yılı) — "2025" = 2025/26 sezonu
+_SEZONLAR = ["2020", "2021", "2022", "2023", "2024", "2025"]
 
 
 def _us_to_sb(x: float, y: float) -> tuple[float, float]:

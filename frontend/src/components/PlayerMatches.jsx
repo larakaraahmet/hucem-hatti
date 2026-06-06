@@ -17,18 +17,32 @@ function shortTournament(t) {
   return t
     .replace("FIFA World Cup", "WC")
     .replace("UEFA Euro", "Euro")
-    .replace("Copa América", "Copa");
+    .replace("Copa América", "Copa")
+    .replace("Premier League", "PL")
+    .replace("Bundesliga", "BL")
+    .replace("La Liga", "LaLiga")
+    .replace("Serie A", "SerieA")
+    .replace("Ligue 1", "L1")
+    .replace("Champions League", "UCL")
+    .replace("Europa League", "UEL");
 }
 
 const TOURN_COLOR = {
-  "FIFA World Cup": "#fbbf24",
-  "UEFA Euro":      "#38bdf8",
-  "Copa América":   "#34d399",
+  "FIFA World Cup":   "#fbbf24",
+  "UEFA Euro":        "#38bdf8",
+  "Copa América":     "#34d399",
+  "Premier League":   "#7c3aed",
+  "Bundesliga":       "#dc2626",
+  "La Liga":          "#ea580c",
+  "Serie A":          "#0284c7",
+  "Ligue 1":          "#059669",
+  "Champions League": "#1d4ed8",
+  "Europa League":    "#f97316",
 };
 
 function tournColor(t) {
   for (const [k, v] of Object.entries(TOURN_COLOR)) {
-    if (t.startsWith(k)) return v;
+    if (t.includes(k)) return v;
   }
   return "#94a3b8";
 }
@@ -48,10 +62,20 @@ export default function PlayerMatches({ playerId, milliyet, competition }) {
 
   if (loading) return <div style={st.empty}>Maçlar yükleniyor…</div>;
   if (!matches.length) return (
-    <div style={{ ...st.empty, padding:"20px", color:"#94a3b8", fontSize:13, textAlign:"center" }}>
-      {competition
-        ? `📋 "${competition}" için maç bazlı veri henüz yok — sezon özet istatistikleri turnuva filtresinde görünüyor.`
-        : "Maç verisi bulunamadı."}
+    <div style={{ ...st.empty, padding:"20px 18px", color:"#94a3b8", fontSize:13, textAlign:"center", lineHeight:1.6 }}>
+      {competition ? (
+        <>
+          <div style={{ fontSize:20, marginBottom:6 }}>📋</div>
+          <div style={{ fontWeight:600, color:"#64748b", marginBottom:4 }}>{competition}</div>
+          <div>Maç bazlı veri henüz yok.</div>
+          <div style={{ fontSize:11, marginTop:4 }}>
+            Sezon özet istatistikleri turnuva filtresinde (Σ) görünüyor.<br/>
+            Maç listesi için shot ingest + aggregate gerekli.
+          </div>
+        </>
+      ) : (
+        <div>Maç verisi bulunamadı.</div>
+      )}
     </div>
   );
 
