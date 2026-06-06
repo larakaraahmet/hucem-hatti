@@ -25,6 +25,9 @@ import MinutesImpact    from "./components/MinutesImpact.jsx";
 import AssistQuality      from "./components/AssistQuality.jsx";
 import FixtureList        from "./components/FixtureList.jsx";
 import Yardimetre         from "./components/Yardimetre.jsx";
+import GroupFixtures      from "./components/GroupFixtures.jsx";
+import Bracket            from "./components/Bracket.jsx";
+import WCPrediction       from "./components/WCPrediction.jsx";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -33,6 +36,32 @@ const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #f1f5f9; font-family: 'Inter','Segoe UI',sans-serif; color: #0f172a; }
+
+/* ── Dark Mode CSS Variables ── */
+:root { --bg:#f1f5f9; --surface:#ffffff; --border:#e2e8f0; --text:#0f172a; --sub:#64748b; }
+[data-theme=dark] { --bg:#0f172a; --surface:#1e293b; --border:#334155; --text:#f1f5f9; --sub:#94a3b8; }
+[data-theme=dark] body { background: var(--bg) !important; color: var(--text) !important; }
+.hh-surface { background: var(--surface); border-color: var(--border); }
+.hh-text { color: var(--text); }
+
+/* ── Mobile ── */
+.hh-hamburger { display: none; align-items:center; justify-content:center; }
+@media (max-width: 768px) {
+  .hh-header-nav { display: none !important; }
+  .hh-hamburger { display: flex !important; }
+  .hh-hero-card { flex-direction: column !important; align-items: center !important; }
+  .hh-hero-name { font-size: 18px !important; }
+  .hh-stats-row { flex-wrap: wrap !important; gap: 8px !important; }
+  .hh-main { padding: 12px 10px 60px !important; }
+  .hh-badges { flex-wrap: wrap !important; }
+}
+.hh-mobile-menu {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: rgba(15,23,42,.98);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  display: flex; flex-direction: column; gap: 4px; padding: 12px 16px;
+  z-index: 100;
+}
 
 /* ── Splash ──────────────────────────────── */
 @keyframes hh-trophy {
@@ -709,22 +738,45 @@ function SplashScreen({ onDone }) {
 }
 
 // ─── Oyuncu arama autocomplete ─────────────────────────────────────────────────
+const POS_FILTERS = [
+  { key:"GK",  label:"🥅 GK"  },
+  { key:"DEF", label:"🛡️ DEF" },
+  { key:"MID", label:"⚙️ MID" },
+  { key:"FWD", label:"⚡ FWD" },
+];
+
 function PlayerSearch({ onSelect, placeholder = "Oyuncu ara…" }) {
-  const [q,    setQ]    = useState("");
-  const [res,  setRes]  = useState([]);
-  const [open, setOpen] = useState(false);
+  const [q,       setQ]       = useState("");
+  const [res,     setRes]     = useState([]);
+  const [open,    setOpen]    = useState(false);
+  const [posGrp,  setPosGrp]  = useState(null);
   const timer = useRef(null);
 
-  const onChange = e => {
-    const v = e.target.value; setQ(v);
+  const doSearch = (val, pos) => {
     clearTimeout(timer.current);
-    if (v.length < 2) { setRes([]); setOpen(false); return; }
+    const hasQ   = val && val.length >= 2;
+    const hasPos = !!pos;
+    if (!hasQ && !hasPos) { setRes([]); setOpen(false); return; }
     timer.current = setTimeout(() => {
-      fetch(`${API_BASE}/players/search?q=${encodeURIComponent(v)}`)
+      let url = `${API_BASE}/players/search?`;
+      if (hasQ)   url += `q=${encodeURIComponent(val)}&`;
+      if (hasPos) url += `mevki_grup=${encodeURIComponent(pos)}&`;
+      fetch(url)
         .then(r => r.ok ? r.json() : [])
         .then(d => { setRes(d); setOpen(d.length > 0); })
         .catch(() => {});
-    }, 240);
+    }, 200);
+  };
+
+  const onChange = e => {
+    const v = e.target.value; setQ(v);
+    doSearch(v, posGrp);
+  };
+
+  const togglePos = key => {
+    const next = posGrp === key ? null : key;
+    setPosGrp(next);
+    doSearch(q, next);
   };
 
   const pick = p => { setQ(p.isim); setOpen(false); onSelect(p.oyuncu_id, p.isim); };
@@ -739,6 +791,17 @@ function PlayerSearch({ onSelect, placeholder = "Oyuncu ara…" }) {
           onFocus={() => res.length > 0 && setOpen(true)}
           style={S.searchInput}
         />
+      </div>
+      {/* Pozisyon filtre chip'leri */}
+      <div style={{ display:"flex", gap:4, marginTop:5, flexWrap:"wrap" }}>
+        {POS_FILTERS.map(pf => (
+          <button key={pf.key} onMouseDown={e => { e.preventDefault(); togglePos(pf.key); }} style={{
+            padding:"2px 8px", borderRadius:12, fontSize:10, fontWeight:700, cursor:"pointer",
+            background: posGrp === pf.key ? "#0f172a" : "rgba(255,255,255,.09)",
+            border:`1px solid ${posGrp === pf.key ? "#f59e0b" : "rgba(255,255,255,.15)"}`,
+            color: posGrp === pf.key ? "#f59e0b" : "rgba(255,255,255,.65)",
+          }}>{pf.label}</button>
+        ))}
       </div>
       {open && (
         <ul style={S.dropdown}>
@@ -760,7 +823,7 @@ function PlayerSearch({ onSelect, placeholder = "Oyuncu ara…" }) {
 function TeamsPage({ onTeamSelect }) {
   const [teams,   setTeams]   = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab,     setTab]     = useState("maclar"); // "maclar" | "oyuncular"
+  const [tab,     setTab]     = useState("maclar"); // "maclar" | "oyuncular" | "gruplar" | "eleme"
 
   useEffect(() => {
     fetch(`${API_BASE}/teams`)
@@ -818,8 +881,10 @@ function TeamsPage({ onTeamSelect }) {
         border:"1px solid #e2e8f0", boxShadow:"0 1px 3px rgba(0,0,0,.06)",
       }}>
         {[
-          { key:"maclar",    label:"📅 Maçlar",           desc:"WC 2026 fikstür & sonuçlar" },
-          { key:"oyuncular", label:"👤 Takımlar & Oyuncular", desc:"Kadro ve oyuncu analizi" },
+          { key:"maclar",    label:"📅 Maçlar",              desc:"WC 2026 fikstür & sonuçlar" },
+          { key:"oyuncular", label:"👤 Takımlar & Oyuncular",desc:"Kadro ve oyuncu analizi" },
+          { key:"gruplar",   label:"🗂️ Gruplar",             desc:"Grup fikstürü ve sonuçlar" },
+          { key:"eleme",     label:"🏆 Eleme",               desc:"Knockout bracket" },
         ].map(({ key, label, desc }) => (
           <button key={key} onClick={() => setTab(key)} style={{
             flex:1, padding:"10px 12px", borderRadius:8, cursor:"pointer",
@@ -834,7 +899,9 @@ function TeamsPage({ onTeamSelect }) {
       </div>
 
       {/* ── İçerik ── */}
-      {tab === "maclar" && <FixtureList onTeamClick={onTeamSelect} />}
+      {tab === "maclar"  && <FixtureList onTeamClick={onTeamSelect} />}
+      {tab === "gruplar" && <GroupFixtures onTeamClick={onTeamSelect} />}
+      {tab === "eleme"   && <Bracket />}
 
       {tab === "oyuncular" && <>
       {/* Konfederasyon grupları */}
@@ -895,12 +962,17 @@ function TeamsPage({ onTeamSelect }) {
 function TeamPage({ ulke, onPlayerSelect, onBack }) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/teams/${encodeURIComponent(ulke)}/players`)
       .then(r => r.ok ? r.json() : [])
       .then(d => { setPlayers(d); setLoading(false); })
       .catch(() => setLoading(false));
+    fetch(`${API_BASE}/teams/${encodeURIComponent(ulke)}/summary`)
+      .then(r => r.ok ? r.json() : null)
+      .then(setSummary)
+      .catch(() => {});
   }, [ulke]);
 
   const confKey   = TEAM_CONF[ulke] ?? "UEFA";
@@ -914,7 +986,7 @@ function TeamPage({ ulke, onPlayerSelect, onBack }) {
       <div style={{ ...S.teamHeadCard, borderTopColor: confColor }}>
         <div style={{ position:"absolute", top:0, left:0, right:0, height:3, background:`linear-gradient(90deg, ${confColor}, ${confColor}44)` }} />
         <span style={{ fontSize:46, lineHeight:1 }}>{flag(ulke)}</span>
-        <div>
+        <div style={{ flex:1 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
             <span style={{ fontSize:24, fontWeight:900, color:"#0f172a" }}>{ulke}</span>
             <span style={{ background:confColor+"22", border:`1px solid ${confColor}44`, color:confColor, fontSize:10, fontWeight:800, padding:"2px 10px", borderRadius:6 }}>
@@ -922,6 +994,23 @@ function TeamPage({ ulke, onPlayerSelect, onBack }) {
             </span>
           </div>
           <span style={S.countBadge}>{players.length} oyuncu · 2026 WC kadrosu</span>
+          {/* Kadro Özet istatistik satırı */}
+          {summary && (
+            <div style={{
+              display:"flex", flexWrap:"wrap", gap:12, marginTop:10,
+              fontSize:11, color:"#64748b",
+            }}>
+              {summary.ort_yas != null && (
+                <span>📅 Ort. Yaş: <strong style={{ color:"#0f172a" }}>{summary.ort_yas}</strong></span>
+              )}
+              <span>🏟️ Maç: <strong style={{ color:"#0f172a" }}>{summary.mac_sayisi}</strong></span>
+              <span>⚽ Gol: <strong style={{ color:"#0f172a" }}>{summary.toplam_gol}</strong></span>
+              <span>📐 xG: <strong style={{ color:"#0f172a" }}>{Number(summary.toplam_xg).toFixed(1)}</strong></span>
+              {summary.en_iyi_oyuncu && (
+                <span>⭐ En İyi: <strong style={{ color:"#d97706" }}>{summary.en_iyi_oyuncu}</strong></span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1039,6 +1128,44 @@ function PerfPopup({ playerId, playerName }) {
   );
 }
 
+// ─── Mini Form Şeridi ────────────────────────────────────────────────────────
+function MiniFormStrip({ playerId }) {
+  const [matches, setMatches] = useState([]);
+  useEffect(() => {
+    if (!playerId) return;
+    fetch(`${API_BASE}/player/${playerId}/matches?limit=5`)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setMatches(Array.isArray(d) ? d.slice(0, 5) : []))
+      .catch(() => {});
+  }, [playerId]);
+
+  if (!matches.length) return null;
+
+  return (
+    <div style={{ display:"flex", gap:5, marginTop:8, alignItems:"center" }}>
+      <span style={{ fontSize:9, fontWeight:700, color:"#94a3b8", letterSpacing:".08em", marginRight:2 }}>SON 5</span>
+      {matches.map((m, i) => {
+        const g = m.gol || 0;
+        const a = m.asist || 0;
+        const bg   = g > 0 ? "#dcfce7" : a > 0 ? "#dbeafe" : "#f1f5f9";
+        const clr  = g > 0 ? "#16a34a" : a > 0 ? "#2563eb" : "#94a3b8";
+        const icon = g > 0 ? "⚽" : a > 0 ? "🅰️" : "·";
+        return (
+          <div key={i} title={`${m.ev_takim} vs ${m.deplasman_takim}`}
+            style={{
+              width:24, height:24, borderRadius:5,
+              background:bg, border:`1px solid ${clr}44`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:12, cursor:"default",
+            }}>
+            {icon}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Oyuncu sayfası ───────────────────────────────────────────────────────────
 const SEC_NAV = [
   { id:"sec-maclar",  icon:"📋", label:"Maçlar"    },
@@ -1136,7 +1263,7 @@ function PlayerPage({ playerId, playerName, onBack }) {
       <button onClick={onBack} style={S.backBtn}>← Geri</button>
 
       {/* ── Oyuncu hero kartı ── */}
-      <div style={S.heroCard}>
+      <div className="hh-hero-card" style={S.heroCard}>
         <div style={S.heroGlow} />
 
         {/* Foto / avatar */}
@@ -1149,12 +1276,23 @@ function PlayerPage({ playerId, playerName, onBack }) {
 
         <div style={{ flex:1, minWidth:0 }}>
           <div style={S.heroNameRow}>
-            <h2 style={S.heroName}>{profile?.isim ?? playerName}</h2>
+            <h2 className="hh-hero-name" style={S.heroName}>{profile?.isim ?? playerName}</h2>
+            {/* Favori yıldızı */}
+            <button
+              onClick={() => toggleFav(playerId, profile?.isim ?? playerName)}
+              title={isFav(playerId) ? "Favorilerden çıkar" : "Favorilere ekle"}
+              style={{
+                background:"none", border:"none", cursor:"pointer",
+                fontSize:20, color: isFav(playerId) ? "#f59e0b" : "#94a3b8",
+                padding:"0 4px", lineHeight:1,
+              }}>
+              {isFav(playerId) ? "⭐" : "☆"}
+            </button>
             {p90 && Object.values(p90).some(v => v > 0) && (
               <PerfPopup playerId={playerId} playerName={profile?.isim ?? playerName} />
             )}
           </div>
-          <div style={S.badgesRow}>
+          <div className="hh-badges" style={S.badgesRow}>
             {profile?.milliyet && <span style={S.badgeGold}>{flag(profile.milliyet)} {profile.milliyet}</span>}
             {profile?.mevki    && <span style={S.badgeBlue}>{profile.mevki}</span>}
             {archetype && (() => {
@@ -1190,7 +1328,7 @@ function PlayerPage({ playerId, playerName, onBack }) {
             )}
           </div>
           {p90 && (
-            <div style={S.statsRow}>
+            <div className="hh-stats-row" style={S.statsRow}>
               {[
                 { l:"xG/90",    v: p90.xg90?.toFixed(2)   },
                 { l:"xA/90",    v: p90.xa90?.toFixed(2)   },
@@ -1205,6 +1343,8 @@ function PlayerPage({ playerId, playerName, onBack }) {
               ))}
             </div>
           )}
+          {/* ── Mini Form Şeridi (son 5 maç) ── */}
+          <MiniFormStrip playerId={playerId} />
         </div>
       </div>
 
@@ -1383,6 +1523,17 @@ function PlayerPage({ playerId, playerName, onBack }) {
         <section style={S.cell}><BettingPanel     playerId={playerId} competition={competition} /></section>
       </div>
 
+      {/* WC 2026 Tahmin */}
+      {p90 && (
+        <div style={{ marginBottom:14 }}>
+          <WCPrediction
+            xg90={p90.xg90 ?? 0}
+            asist90={p90.asist90 ?? 0}
+            playerName={profile?.isim ?? playerName}
+          />
+        </div>
+      )}
+
       <div className="hh-grid2">
         <section style={S.cell}><HomeAwaySplit    playerId={playerId} milliyet={profile?.milliyet} competition={competition} /></section>
         <section style={S.cell}><ScoringPattern   playerId={playerId} competition={competition} /></section>
@@ -1501,9 +1652,30 @@ export default function App() {
   const [selTeam,    setSelTeam]    = useState(null);
   const [playerId,   setPlayerId]   = useState(null);
   const [playerName, setPlayerName] = useState(null);
+  const [dark,       setDark]       = useState(() => localStorage.getItem("hh_dark") === "1");
+  const [favorites,  setFavorites]  = useState(() =>
+    JSON.parse(localStorage.getItem("hh_favorites") || "[]")
+  );
+  const [favOpen,    setFavOpen]    = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    localStorage.setItem("hh_dark", dark ? "1" : "0");
+  }, [dark]);
+
+  const toggleFav = (id, name) => {
+    setFavorites(prev => {
+      const exists = prev.some(f => f.id === id);
+      const next = exists ? prev.filter(f => f.id !== id) : [...prev, { id, name }];
+      localStorage.setItem("hh_favorites", JSON.stringify(next));
+      return next;
+    });
+  };
+  const isFav = id => favorites.some(f => f.id === id);
 
   // Yeni sayfalara geçince state-based sayfayı "teams"'e sıfırla
   useEffect(() => {
@@ -1531,11 +1703,11 @@ export default function App() {
         transition:"opacity .5s ease",
       }}>
         {/* ── HEADER ── */}
-        <header style={S.header}>
+        <header style={{ ...S.header, position:"sticky" }}>
           <div style={S.headerStripe} />
           <div style={S.headerRow}>
             {/* Sol: Logo */}
-            <Link to="/" onClick={() => setPage("teams")} style={{ textDecoration:"none", flexShrink:0 }}>
+            <Link to="/" onClick={() => { setPage("teams"); setMobileMenuOpen(false); }} style={{ textDecoration:"none", flexShrink:0 }}>
               <span style={S.logo}>
                 {"HüCem Hattı".split("").map((ch, i) => {
                   const blue = new Set([0,6]), gold = new Set([2]);
@@ -1551,24 +1723,104 @@ export default function App() {
             </Link>
 
             {/* Orta: Nav linkleri */}
-            <div style={S.navRow}>
+            <div className="hh-header-nav" style={S.navRow}>
               <NavLink to="/" exact onClick={() => setPage("teams")}>🏠 Takımlar</NavLink>
               <NavLink to="/leaders">🏆 Liderler</NavLink>
               <NavLink to="/compare">⚖️ Karşılaştır</NavLink>
             </div>
 
-            {/* Sağ: Search */}
-            <div style={{ flexShrink:0 }}>
+            {/* Sağ: araçlar */}
+            <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
+              {/* Arama */}
               <PlayerSearch
                 placeholder="Oyuncu ara…"
-                onSelect={(id, name) => goPlayer(id, name)}
+                onSelect={(id, name) => { goPlayer(id, name); setMobileMenuOpen(false); }}
               />
+
+              {/* Favoriler */}
+              <div style={{ position:"relative" }}>
+                <button
+                  onClick={() => setFavOpen(o => !o)}
+                  title="Favoriler"
+                  style={{
+                    background:"rgba(255,255,255,.09)", border:"1px solid rgba(255,255,255,.13)",
+                    borderRadius:20, color:"#fbbf24", cursor:"pointer",
+                    fontSize:14, padding:"5px 10px", display:"flex", alignItems:"center", gap:4,
+                  }}>
+                  ⭐
+                  {favorites.length > 0 && (
+                    <span style={{
+                      background:"#f59e0b", color:"#0f172a", borderRadius:"50%",
+                      fontSize:9, fontWeight:900, width:16, height:16,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                    }}>{favorites.length}</span>
+                  )}
+                </button>
+                {favOpen && (
+                  <div style={{
+                    position:"absolute", top:"calc(100% + 8px)", right:0,
+                    background:"#1e293b", border:"1px solid #334155",
+                    borderRadius:12, padding:"8px 0", zIndex:300, minWidth:200,
+                    boxShadow:"0 12px 40px rgba(0,0,0,.4)",
+                    animation:"hh-fadein .15s ease",
+                  }}>
+                    <div style={{ padding:"6px 14px 8px", fontSize:9, fontWeight:800, color:"#94a3b8", letterSpacing:".08em" }}>
+                      FAVORİLER
+                    </div>
+                    {favorites.length === 0 ? (
+                      <div style={{ padding:"8px 14px", fontSize:12, color:"#64748b" }}>Henüz favori yok</div>
+                    ) : favorites.map(f => (
+                      <div key={f.id}
+                        onClick={() => { goPlayer(f.id, f.name); setFavOpen(false); }}
+                        style={{ padding:"8px 14px", fontSize:12, color:"#f1f5f9", cursor:"pointer",
+                                 display:"flex", alignItems:"center", gap:8,
+                                 borderTop:"1px solid rgba(255,255,255,.04)" }}>
+                        <span style={{ fontSize:14, color:"#f59e0b" }}>⭐</span>
+                        {f.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Dark mode toggle */}
+              <button
+                onClick={() => setDark(d => !d)}
+                title={dark ? "Açık Mod" : "Koyu Mod"}
+                style={{
+                  background:"rgba(255,255,255,.09)", border:"1px solid rgba(255,255,255,.13)",
+                  borderRadius:20, color:"rgba(255,255,255,.8)", cursor:"pointer",
+                  fontSize:14, padding:"5px 10px",
+                }}>
+                {dark ? "☀️" : "🌙"}
+              </button>
+
+              {/* Hamburger */}
+              <button
+                className="hh-hamburger"
+                onClick={() => setMobileMenuOpen(o => !o)}
+                style={{
+                  background:"rgba(255,255,255,.09)", border:"1px solid rgba(255,255,255,.13)",
+                  borderRadius:8, color:"rgba(255,255,255,.8)", cursor:"pointer",
+                  fontSize:18, padding:"4px 8px",
+                }}>
+                {mobileMenuOpen ? "✕" : "☰"}
+              </button>
             </div>
           </div>
+
+          {/* Mobile dropdown menu */}
+          {mobileMenuOpen && (
+            <div className="hh-mobile-menu">
+              <NavLink to="/" exact onClick={() => { setPage("teams"); setMobileMenuOpen(false); }}>🏠 Takımlar</NavLink>
+              <NavLink to="/leaders" onClick={() => setMobileMenuOpen(false)}>🏆 Liderler</NavLink>
+              <NavLink to="/compare" onClick={() => setMobileMenuOpen(false)}>⚖️ Karşılaştır</NavLink>
+            </div>
+          )}
         </header>
 
         {/* ── İÇERİK ── */}
-        <main style={S.main}>
+        <main className="hh-main" style={S.main}>
           <Routes>
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/leaders" element={

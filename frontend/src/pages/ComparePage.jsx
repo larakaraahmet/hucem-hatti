@@ -1,5 +1,5 @@
 /**
- * ComparePage — İki oyuncuyu yan yana karşılaştır
+ * ComparePage — İki oyuncuyu veya iki takımı yan yana karşılaştır
  */
 import { useState, useRef, useEffect } from "react";
 import { api } from "../services/api.js";
@@ -180,11 +180,153 @@ function PlayerHero({ profile, color }) {
   );
 }
 
+// ── Team comparison ─────────────────────────────────────────────────────────
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
+const TEAM_METRICS = [
+  { key:"ort_yas",      label:"Ort. Yaş",      icon:"📅", fmt: v => v != null ? Number(v).toFixed(1) : "—" },
+  { key:"mac_sayisi",   label:"Maç Sayısı",     icon:"🏟️", fmt: v => v != null ? String(v) : "—" },
+  { key:"toplam_gol",   label:"Toplam Gol",     icon:"⚽", fmt: v => v != null ? String(v) : "—" },
+  { key:"toplam_xg",    label:"Toplam xG",      icon:"📐", fmt: v => v != null ? Number(v).toFixed(1) : "—" },
+  { key:"oyuncu_sayisi",label:"Oyuncu Sayısı",  icon:"👥", fmt: v => v != null ? String(v) : "—" },
+];
+
+function TeamDropdown({ label, color, value, onChange, teams }) {
+  return (
+    <div style={{ flex:1 }}>
+      <label style={{ fontSize:10, fontWeight:700, color:"#94a3b8", letterSpacing:".06em", display:"block", marginBottom:6 }}>
+        {label}
+      </label>
+      <select value={value || ""} onChange={e => onChange(e.target.value || null)}
+        style={{
+          width:"100%", padding:"10px 12px", borderRadius:10, fontSize:13,
+          background:"#ffffff", border:`1.5px solid ${value ? color : "#e2e8f0"}`,
+          color: value ? "#0f172a" : "#94a3b8", cursor:"pointer", outline:"none",
+        }}>
+        <option value="">Ülke seç…</option>
+        {teams.map(t => (
+          <option key={t} value={t}>{t}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function TeamStatBar({ label, icon, valA, valB, colorA, colorB, fmt }) {
+  const a = parseFloat(valA) || 0;
+  const b = parseFloat(valB) || 0;
+  const max = Math.max(a, b, 0.001);
+  const winA = a > b;
+  const winB = b > a;
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 20px", borderBottom:"1px solid #f8fafc" }}>
+      <div style={{ flex:1, textAlign:"right" }}>
+        <span style={{ fontSize:16, fontWeight:800, color: winA ? colorA : "#64748b" }}>{fmt(valA)}</span>
+        {winA && <span style={{ marginLeft:4, fontSize:12 }}>✓</span>}
+      </div>
+      <div style={{ width:140, flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:1 }}>
+        <span style={{ fontSize:14 }}>{icon}</span>
+        <span style={{ fontSize:10, color:"#64748b", fontWeight:600 }}>{label}</span>
+      </div>
+      <div style={{ flex:1, textAlign:"left" }}>
+        {winB && <span style={{ marginRight:4, fontSize:12 }}>✓</span>}
+        <span style={{ fontSize:16, fontWeight:800, color: winB ? colorB : "#64748b" }}>{fmt(valB)}</span>
+      </div>
+    </div>
+  );
+}
+
+function TeamComparePage() {
+  const [allTeams,  setAllTeams]  = useState([]);
+  const [teamA,     setTeamA]     = useState(null);
+  const [teamB,     setTeamB]     = useState(null);
+  const [summaryA,  setSummaryA]  = useState(null);
+  const [summaryB,  setSummaryB]  = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/teams`)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setAllTeams(d.map(t => t.ulke).sort()))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setSummaryA(null);
+    if (!teamA) return;
+    fetch(`${API_BASE}/teams/${encodeURIComponent(teamA)}/summary`)
+      .then(r => r.ok ? r.json() : null).then(setSummaryA).catch(() => {});
+  }, [teamA]);
+
+  useEffect(() => {
+    setSummaryB(null);
+    if (!teamB) return;
+    fetch(`${API_BASE}/teams/${encodeURIComponent(teamB)}/summary`)
+      .then(r => r.ok ? r.json() : null).then(setSummaryB).catch(() => {});
+  }, [teamB]);
+
+  const canCompare = summaryA && summaryB;
+
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
+        <TeamDropdown label="1. Takım" color={COLOR_A} value={teamA} onChange={setTeamA} teams={allTeams} />
+        <div style={st.vsCircle}>VS</div>
+        <TeamDropdown label="2. Takım" color={COLOR_B} value={teamB} onChange={setTeamB} teams={allTeams} />
+      </div>
+
+      {canCompare ? (
+        <div style={st.compareCard}>
+          <div style={st.compareHeader}>
+            <span style={{ ...st.colLabel, color: COLOR_A }}>{summaryA.ulke}</span>
+            <span style={st.colCenter}>Kadro İstatistikleri</span>
+            <span style={{ ...st.colLabel, color: COLOR_B }}>{summaryB.ulke}</span>
+          </div>
+          {TEAM_METRICS.map(m => (
+            <TeamStatBar key={m.key} label={m.label} icon={m.icon}
+              valA={summaryA[m.key]} valB={summaryB[m.key]}
+              colorA={COLOR_A} colorB={COLOR_B} fmt={m.fmt} />
+          ))}
+          {/* En iyi oyuncular */}
+          <div style={{ display:"flex", padding:"12px 20px", gap:20, background:"#fafafa", borderTop:"1px solid #f1f5f9" }}>
+            <div style={{ flex:1, textAlign:"center" }}>
+              {summaryA.en_iyi_oyuncu && (
+                <div>
+                  <div style={{ fontSize:9, color:"#94a3b8", fontWeight:700, marginBottom:3 }}>⭐ EN İYİ (xG)</div>
+                  <div style={{ fontSize:12, fontWeight:800, color: COLOR_A }}>{summaryA.en_iyi_oyuncu}</div>
+                  <div style={{ fontSize:10, color:"#64748b" }}>{Number(summaryA.en_iyi_xg || 0).toFixed(1)} xG</div>
+                </div>
+              )}
+            </div>
+            <div style={{ width:1, background:"#f1f5f9" }} />
+            <div style={{ flex:1, textAlign:"center" }}>
+              {summaryB.en_iyi_oyuncu && (
+                <div>
+                  <div style={{ fontSize:9, color:"#94a3b8", fontWeight:700, marginBottom:3 }}>⭐ EN İYİ (xG)</div>
+                  <div style={{ fontSize:12, fontWeight:800, color: COLOR_B }}>{summaryB.en_iyi_oyuncu}</div>
+                  <div style={{ fontSize:10, color:"#64748b" }}>{Number(summaryB.en_iyi_xg || 0).toFixed(1)} xG</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={st.placeholder}>
+          <div style={{ fontSize:48, marginBottom:12 }}>🏳️</div>
+          <div style={{ color:"#64748b", fontSize:14 }}>
+            {!teamA && !teamB ? "Karşılaştırmak için iki takım seç" : "İkinci takımı da seç"}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────
 const COLOR_A = "#38bdf8";
 const COLOR_B = "#f59e0b";
 
 export default function ComparePage() {
+  const [mode,    setMode]    = useState("oyuncu"); // "oyuncu" | "takim"
   const [playerA, setPlayerA] = useState(null);
   const [playerB, setPlayerB] = useState(null);
   const [profileA, setProfileA] = useState(null);
@@ -206,10 +348,32 @@ export default function ComparePage() {
     <div style={st.page}>
       {/* ── Başlık ── */}
       <div style={st.header}>
-        <h1 style={st.title}>⚖️ Oyuncu Karşılaştırma</h1>
-        <p style={st.sub}>İki oyuncuyu yan yana metriklerle karşılaştır</p>
+        <h1 style={st.title}>⚖️ Karşılaştırma</h1>
+        <p style={st.sub}>İki oyuncu veya takımı yan yana metriklerle karşılaştır</p>
       </div>
 
+      {/* ── Mod toggle ── */}
+      <div style={{ display:"flex", gap:8, marginBottom:20, background:"#f8fafc", borderRadius:10, padding:4, border:"1px solid #e2e8f0" }}>
+        {[
+          { key:"oyuncu", label:"👤 Oyuncu" },
+          { key:"takim",  label:"🏳️ Takım" },
+        ].map(m => (
+          <button key={m.key} onClick={() => setMode(m.key)} style={{
+            flex:1, padding:"8px", borderRadius:7, cursor:"pointer",
+            border:`1.5px solid ${mode===m.key ? "#f59e0b" : "transparent"}`,
+            background: mode===m.key ? "#fef3c7" : "transparent",
+            fontSize:13, fontWeight:800,
+            color: mode===m.key ? "#d97706" : "#64748b",
+            transition:"all .15s",
+          }}>{m.label}</button>
+        ))}
+      </div>
+
+      {/* ── Takım modu ── */}
+      {mode === "takim" && <TeamComparePage />}
+
+      {/* ── Oyuncu modu ── */}
+      {mode === "oyuncu" && <>
       {/* ── Arama kutuları ── */}
       <div style={st.searchRow}>
         <PlayerSearchBox label="1. Oyuncu" color={COLOR_A} onSelect={setPlayerA} selected={playerA} />
@@ -262,6 +426,7 @@ export default function ComparePage() {
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }

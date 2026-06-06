@@ -593,26 +593,50 @@ def get_team_players(ulke: str, engine: Engine = Depends(get_engine)):
 @app.get(
     "/players/search",
     response_model=list[PlayerSummary],
-    summary="Oyuncu adıyla arama (min 2 karakter)",
+    summary="Oyuncu adıyla arama",
 )
 def search_players(
-    q: str = Query(min_length=2, description="Aranacak oyuncu adı"),
+    q: Optional[str] = Query(None, description="Aranacak oyuncu adı"),
+    mevki_grup: Optional[str] = Query(None, description="GK|DEF|MID|FWD"),
+    ulke: Optional[str] = Query(None, description="Ülke filtresi (İngilizce)"),
     engine: Engine = Depends(get_engine),
 ):
     global _last_notif_search
-    # "ping" sorgusunu bildir­me (keepalive pingleri için)
-    if q.lower() != "ping" and q != _last_notif_search:
+    if q and q.lower() != "ping" and q != _last_notif_search:
         _last_notif_search = q
         _ntfy("🔍 Arama yapıldı", f'"{q}" arandı')
+
+    conditions = ["wc_squad_yil = 2026"]
+    params: dict = {}
+
+    if q and len(q.strip()) >= 2:
+        conditions.append("unaccent(isim) ILIKE unaccent(:q)")
+        params["q"] = f"%{q.strip()}%"
+
+    if mevki_grup:
+        mg = mevki_grup.upper()
+        if mg == "GK":
+            conditions.append("mevki ILIKE '%Goalkeeper%'")
+        elif mg == "DEF":
+            conditions.append("(mevki ILIKE '%Back%' OR mevki ILIKE '%Center Back%' OR mevki ILIKE '%Defensive%')")
+        elif mg == "MID":
+            conditions.append("(mevki ILIKE '%Midfield%' OR mevki ILIKE '%Attacking Mid%')")
+        elif mg == "FWD":
+            conditions.append("(mevki ILIKE '%Forward%' OR mevki ILIKE '%Wing%' OR mevki ILIKE '%Striker%')")
+
+    if ulke:
+        conditions.append("unaccent(milliyet) ILIKE unaccent(:ulke)")
+        params["ulke"] = f"%{ulke.strip()}%"
+
+    where = " AND ".join(conditions)
     with engine.connect() as conn:
-        rows = conn.execute(text("""
+        rows = conn.execute(text(f"""
             SELECT id AS oyuncu_id, isim, mevki, milliyet
             FROM players
-            WHERE unaccent(isim) ILIKE unaccent(:q)
-              AND wc_squad_yil = 2026
+            WHERE {where}
             ORDER BY isim
-            LIMIT 20
-        """), {"q": f"%{q}%"}).mappings().fetchall()
+            LIMIT 50
+        """), params).mappings().fetchall()
     return [PlayerSummary(**dict(r)) for r in rows]
 
 
@@ -1304,6 +1328,125 @@ def get_goal_timing(
             "gec_pct":   round(gec   / toplam * 100, 1) if toplam else 0,
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# WC 2026 Grup Fikstürü
+# ---------------------------------------------------------------------------
+
+@app.get("/fixtures/groups", summary="WC 2026 grup fikstürü — grup bazında")
+def get_fixtures_groups(engine: Engine = Depends(get_engine)):
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT grup, ev_takim, dep_takim, tarih_utc, durum, ev_gol, dep_gol
+            FROM fixtures
+            WHERE tur = 'Grup'
+            ORDER BY grup, tarih_utc
+        """)).mappings().fetchall()
+
+    result: dict = {}
+    for r in rows:
+        row = dict(r)
+        if row.get("tarih_utc"):
+            row["tarih_utc"] = row["tarih_utc"].isoformat()
+        g = row.get("grup") or "?"
+        if g not in result:
+            result[g] = []
+        result[g].append(row)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# WC 2026 Eleme Bracket
+# ---------------------------------------------------------------------------
+
+@app.get("/fixtures/bracket", summary="WC 2026 eleme bracket")
+def get_fixtures_bracket(engine: Engine = Depends(get_engine)):
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT tur, ev_takim, dep_takim, tarih_utc, durum, ev_gol, dep_gol
+            FROM fixtures
+            WHERE tur IN ('Son 32','Son 16','Çeyrek Final','Yarı Final','3. lük','Final')
+            ORDER BY
+              CASE tur
+                WHEN 'Son 32'      THEN 1
+                WHEN 'Son 16'      THEN 2
+                WHEN 'Çeyrek Final' THEN 3
+                WHEN 'Yarı Final'  THEN 4
+                WHEN '3. lük'      THEN 5
+                WHEN 'Final'       THEN 6
+              END, tarih_utc
+        """)).mappings().fetchall()
+
+    result: dict = {}
+    for r in rows:
+        row = dict(r)
+        if row.get("tarih_utc"):
+            row["tarih_utc"] = row["tarih_utc"].isoformat()
+        t = row.get("tur") or "?"
+        if t not in result:
+            result[t] = []
+        result[t].append(row)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Kadro Özet
+# ---------------------------------------------------------------------------
+
+class TeamSummaryDetail(BaseModel):
+    ulke: str
+    oyuncu_sayisi: int
+    ort_yas: Optional[float]
+    toplam_gol: int
+    toplam_xg: float
+    mac_sayisi: int
+    en_iyi_oyuncu: Optional[str]
+    en_iyi_xg: Optional[float]
+
+
+@app.get(
+    "/teams/{ulke}/summary",
+    response_model=TeamSummaryDetail,
+    summary="Kadro özet istatistikleri",
+)
+def get_team_summary(ulke: str, engine: Engine = Depends(get_engine)):
+    with engine.connect() as conn:
+        row = conn.execute(text("""
+            SELECT
+              COUNT(DISTINCT p.id)                                                        AS oyuncu_sayisi,
+              ROUND(AVG(EXTRACT(YEAR FROM NOW()) - EXTRACT(YEAR FROM p.dogum_tarihi))::numeric, 1) AS ort_yas,
+              COALESCE(SUM(COALESCE(pms.gol, 0)), 0)                                     AS toplam_gol,
+              ROUND(COALESCE(SUM(COALESCE(pms.xg, 0)), 0)::numeric, 2)                   AS toplam_xg,
+              COUNT(DISTINCT pms.mac_id)                                                  AS mac_sayisi
+            FROM players p
+            LEFT JOIN player_match_stats pms ON pms.oyuncu_id = p.id
+            WHERE unaccent(p.milliyet) ILIKE unaccent(:ulke)
+        """), {"ulke": ulke}).mappings().fetchone()
+
+        best_row = conn.execute(text("""
+            SELECT p.isim, SUM(COALESCE(pms.xg, 0)) AS toplam_xg
+            FROM players p
+            JOIN player_match_stats pms ON pms.oyuncu_id = p.id
+            WHERE unaccent(p.milliyet) ILIKE unaccent(:ulke)
+            GROUP BY p.id, p.isim
+            ORDER BY toplam_xg DESC
+            LIMIT 1
+        """), {"ulke": ulke}).mappings().fetchone()
+
+    if not row or not row["oyuncu_sayisi"]:
+        raise HTTPException(status_code=404, detail=f"{ulke} için oyuncu bulunamadı.")
+
+    return TeamSummaryDetail(
+        ulke           = ulke,
+        oyuncu_sayisi  = int(row["oyuncu_sayisi"] or 0),
+        ort_yas        = float(row["ort_yas"]) if row["ort_yas"] is not None else None,
+        toplam_gol     = int(row["toplam_gol"] or 0),
+        toplam_xg      = float(row["toplam_xg"] or 0),
+        mac_sayisi     = int(row["mac_sayisi"] or 0),
+        en_iyi_oyuncu  = best_row["isim"] if best_row else None,
+        en_iyi_xg      = float(best_row["toplam_xg"]) if best_row else None,
+    )
 
 
 @app.get("/ntfy-test", summary="ntfy bağlantısını test eder")
