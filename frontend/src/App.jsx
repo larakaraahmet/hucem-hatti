@@ -1221,7 +1221,7 @@ const ARCHETYPE_META = {
   "Balanced":            { icon:"⚖️", color:"#94a3b8" },
 };
 
-function PlayerPage({ playerId, playerName, onBack }) {
+function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
   const [profile,    setProfile]    = useState(null);
   const [archetype,  setArchetype]  = useState(null);
   const [comps,      setComps]      = useState([]);
@@ -1839,7 +1839,8 @@ export default function App() {
                 )}
                 {page === "player" && playerId && (
                   <PlayerPage playerId={playerId} playerName={playerName}
-                    onBack={() => setPage(selTeam ? "team" : "teams")} />
+                    onBack={() => setPage(selTeam ? "team" : "teams")}
+                    toggleFav={toggleFav} isFav={isFav} />
                 )}
               </>
             } />
