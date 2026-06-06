@@ -987,61 +987,52 @@ function compMeta(name) {
   return { icon:"🏟️", color:"#64748b" };
 }
 
-// ─── Performans profili popup — hero kartı sağında ikon, hover'da açılır ──────
-function PerfPopup({ p90 }) {
+// ─── Performans profili popup — hero kartı sağında ikon, hover'da radar açılır ─
+function PerfPopup({ playerId, playerName }) {
   const [open, setOpen] = useState(false);
-  const metrics = [
-    { l:"xG/90",    v: p90.xg90,    c:"#10b981" },
-    { l:"xA/90",    v: p90.xa90,    c:"#38bdf8" },
-    { l:"Gol/90",   v: p90.gol90,   c:"#f59e0b" },
-    { l:"Asist/90", v: p90.asist90, c:"#f472b6" },
-    { l:"Şut/90",   v: p90.sut90,   c:"#a78bfa" },
-  ];
   return (
-    <div style={{ position:"relative", display:"inline-flex", alignItems:"center" }}
+    <div style={{ position:"relative", display:"inline-flex", alignItems:"center", flexShrink:0 }}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
+      {/* Tetikleyici ikon */}
       <div style={{
-        width:32, height:32, borderRadius:8,
-        background: open ? "rgba(245,158,11,.18)" : "rgba(245,158,11,.08)",
-        border: `1px solid ${open ? "rgba(245,158,11,.5)" : "rgba(245,158,11,.2)"}`,
+        width:34, height:34, borderRadius:9,
+        background: open ? "rgba(59,130,246,.15)" : "rgba(59,130,246,.07)",
+        border: `1px solid ${open ? "rgba(59,130,246,.45)" : "rgba(59,130,246,.18)"}`,
         display:"flex", alignItems:"center", justifyContent:"center",
-        cursor:"default", fontSize:15,
-        transform: open ? "scale(1.18)" : "scale(1)",
+        cursor:"default", fontSize:16,
+        transform: open ? "scale(1.2)" : "scale(1)",
         transition:"all .18s",
+        boxShadow: open ? "0 4px 16px rgba(59,130,246,.2)" : "none",
       }}>
         📊
       </div>
+
+      {/* Popup — radar chart küçültülmüş */}
       {open && (
         <div style={{
-          position:"absolute", top:"calc(100% + 8px)", right:0,
-          background:"#ffffff", border:"1px solid #e2e8f0",
-          borderRadius:14, padding:"14px 16px",
-          boxShadow:"0 12px 40px rgba(0,0,0,.14)",
-          zIndex:200, minWidth:210,
+          position:"absolute", top:"calc(100% + 10px)", right:0,
+          background:"#fff", border:"1px solid #e2e8f0",
+          borderRadius:16, padding:"16px",
+          boxShadow:"0 16px 48px rgba(0,0,0,.16)",
+          zIndex:300, width:340,
           animation:"hh-fadein .15s ease",
-          pointerEvents:"none",
         }}>
-          <div style={{ fontSize:10, fontWeight:700, color:"#94a3b8", letterSpacing:".08em", marginBottom:10 }}>
+          <div style={{ fontSize:10, fontWeight:700, color:"#94a3b8", letterSpacing:".08em", marginBottom:8 }}>
             📊 PERFORMANS PROFİLİ
           </div>
-          {metrics.map(({l,v,c}) => (
-            <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7 }}>
-              <span style={{ fontSize:11, color:"#64748b" }}>{l}</span>
-              <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                <div style={{
-                  width: Math.min((v ?? 0) * 50, 70),
-                  height:4, borderRadius:2,
-                  background: c, opacity:.75,
-                  transition:"width .3s",
-                }} />
-                <span style={{ fontSize:12, fontWeight:800, color:"#0f172a", minWidth:34, textAlign:"right" }}>
-                  {(v ?? 0).toFixed(2)}
-                </span>
-              </div>
-            </div>
-          ))}
+          {/* RadarChart kendi verisini API'den çeker, scale ile küçültüyoruz */}
+          <div style={{
+            transformOrigin:"top center",
+            transform:"scale(0.72)",
+            height:340,
+            marginBottom:-100,
+            pointerEvents:"none",
+            overflow:"hidden",
+          }}>
+            <RadarChart playerId={playerId} playerName={playerName} />
+          </div>
         </div>
       )}
     </div>
@@ -1160,7 +1151,7 @@ function PlayerPage({ playerId, playerName, onBack }) {
           <div style={S.heroNameRow}>
             <h2 style={S.heroName}>{profile?.isim ?? playerName}</h2>
             {p90 && Object.values(p90).some(v => v > 0) && (
-              <PerfPopup p90={p90} />
+              <PerfPopup playerId={playerId} playerName={profile?.isim ?? playerName} />
             )}
           </div>
           <div style={S.badgesRow}>
