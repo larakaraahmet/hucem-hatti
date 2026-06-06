@@ -1322,6 +1322,12 @@ class LoginRequest(BaseModel):
     sifre: str
 
 
+@app.get("/auth/ping", summary="Şifre ekranı açıldığında bildirim gönderir")
+def auth_ping():
+    _ntfy("👀 Şifre ekranı", "Biri siteye girmeye çalışıyor")
+    return {"ok": True}
+
+
 @app.post("/auth/login", summary="Site şifresini doğrular")
 def auth_login(req: LoginRequest):
     if not _SITE_PASSWORD:

@@ -1406,6 +1406,10 @@ function PasswordGate({ onAuth }) {
   const [hata,   setHata]   = useState("");
   const [loading, setLoad]  = useState(false);
 
+  useEffect(() => {
+    fetch(`${API_BASE}/auth/ping`).catch(() => {});
+  }, []);
+
   const gonder = async (e) => {
     e.preventDefault();
     if (!sifre.trim()) return;
