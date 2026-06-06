@@ -123,13 +123,19 @@ def load_db_players(engine) -> list[dict]:
 
 def get_or_create_team(conn, team_name: str, ulke: str = "") -> int:
     """Takımı teams tablosunda bulur, yoksa ekler."""
-    r = conn.execute(text("SELECT id FROM teams WHERE isim = :n"), {"n": team_name}).fetchone()
+    r = conn.execute(text(
+        "SELECT id FROM teams WHERE isim = :n LIMIT 1"
+    ), {"n": team_name}).fetchone()
     if r:
         return r[0]
+    # Sequence senkronunu düzelt, sonra insert et
+    conn.execute(text(
+        "SELECT setval('teams_id_seq', (SELECT MAX(id) FROM teams))"
+    ))
     nr = conn.execute(text(
         "INSERT INTO teams (isim, ulke) VALUES (:n, :u) RETURNING id"
     ), {"n": team_name, "u": ulke}).fetchone()
-    return nr[0]
+    return nr[0] if nr else None
 
 
 # ── Understat: sezon istatistikleri ─────────────────────────────────────────
@@ -374,10 +380,16 @@ def ingest_shots(
                 away_team   = str(_col(row, "a_team", default="") or team_info.get("away", ""))
                 match_date  = str(_col(row, "date", default="") or team_info.get("date", "2024-01-01"))[:10]
 
+                # Turnuva adı: "La Liga 2025/26" formatında
+                turnuva_adi = f"{lig_tr} {sezon}/{str(sezon+1)[-2:]}"
+
                 with engine.begin() as conn:
-                    existing = conn.execute(text(
-                        "SELECT id FROM matches WHERE turnuva = :tur AND source = 'understat' LIMIT 1"
-                    ), {"tur": f"us_{us_match_id}"}).fetchone()
+                    # us_{id} veya turnuva adıyla ara
+                    existing = conn.execute(text("""
+                        SELECT id FROM matches
+                        WHERE (turnuva = :tur_id OR turnuva = :tur_ad)
+                          AND source = 'understat' LIMIT 1
+                    """), {"tur_id": f"us_{us_match_id}", "tur_ad": turnuva_adi}).fetchone()
 
                     if not existing:
                         if not home_team or not away_team:
@@ -385,7 +397,7 @@ def ingest_shots(
                             continue
                         home_id = get_or_create_team(conn, home_team, lig_tr)
                         away_id = get_or_create_team(conn, away_team, lig_tr)
-                        if home_id == away_id:
+                        if not home_id or not away_id or home_id == away_id:
                             stats["atildi"] += 1
                             continue
                         mac_result = conn.execute(text("""
@@ -393,20 +405,26 @@ def ingest_shots(
                             VALUES (:t, :ev, :dep, :tur, 'understat')
                             ON CONFLICT DO NOTHING RETURNING id
                         """), {"t": match_date, "ev": home_id, "dep": away_id,
-                               "tur": f"us_{us_match_id}"}).fetchone()
+                               "tur": turnuva_adi}).fetchone()
                         if not mac_result:
                             stats["atildi"] += 1
                             continue
                         mac_id = mac_result[0]
                     else:
                         mac_id = existing[0]
+                        # Eski us_xxx turnuva adını güncelle
+                        conn.execute(text("""
+                            UPDATE matches SET turnuva = :tur WHERE id = :id AND turnuva LIKE 'us_%'
+                        """), {"tur": turnuva_adi, "id": mac_id})
 
+                    shot_id = str(_col(row, "shot_id", "id", default=""))
+                    ext_id  = f"us_{shot_id}" if shot_id else None
                     conn.execute(text("""
-                        INSERT INTO shots (oyuncu_id, mac_id, x_konum, y_konum, xg, gol_mu, source)
-                        VALUES (:pid, :mid, :x, :y, :xg, :gol, 'understat')
-                        ON CONFLICT DO NOTHING
+                        INSERT INTO shots (oyuncu_id, mac_id, x_konum, y_konum, xg, gol_mu, source, external_id)
+                        VALUES (:pid, :mid, :x, :y, :xg, :gol, 'understat', :eid)
+                        ON CONFLICT (external_id) WHERE external_id IS NOT NULL DO NOTHING
                     """), {"pid": db_p["id"], "mid": mac_id,
-                           "x": sb_x, "y": sb_y, "xg": xg, "gol": gol_mu})
+                           "x": sb_x, "y": sb_y, "xg": xg, "gol": gol_mu, "eid": ext_id})
                 stats["eklendi"] += 1
 
             time.sleep(2.0)
