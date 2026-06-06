@@ -47,7 +47,13 @@ export default function PlayerMatches({ playerId, milliyet, competition }) {
   }, [playerId, competition]);
 
   if (loading) return <div style={st.empty}>Maçlar yükleniyor…</div>;
-  if (!matches.length) return null;
+  if (!matches.length) return (
+    <div style={{ ...st.empty, padding:"20px", color:"#94a3b8", fontSize:13, textAlign:"center" }}>
+      {competition
+        ? `📋 "${competition}" için maç bazlı veri henüz yok — sezon özet istatistikleri turnuva filtresinde görünüyor.`
+        : "Maç verisi bulunamadı."}
+    </div>
+  );
 
   const shown = open ? matches : matches.slice(0, 6);
 
