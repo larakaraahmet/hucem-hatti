@@ -309,6 +309,25 @@ def ingest_shots(
         lig_tr = LIG_TR.get(lig_kod, lig_kod)
         for sezon in sezonlar:
             log.info(f"\n  ── {lig_tr} {sezon} şutlar ──")
+
+            # Schedule'dan home/away team bilgisini al (game_id → teams mapping)
+            try:
+                import soccerdata as sd
+                ws = sd.Understat(leagues=lig_kod, seasons=sezon, no_store=no_store)
+                sched = ws.read_schedule().reset_index()
+                game_teams = {}
+                for _, sr in sched.iterrows():
+                    gid = int(sr.get("game_id", 0) or 0)
+                    if gid:
+                        game_teams[gid] = {
+                            "home": str(sr.get("home_team", "")),
+                            "away": str(sr.get("away_team", "")),
+                            "date": str(sr.get("date", "2024-01-01"))[:10],
+                        }
+            except Exception as e:
+                log.error(f"  Schedule alınamadı: {e}")
+                game_teams = {}
+
             df = fetch_shots(lig_kod, sezon, limit_mac, no_store)
             if df.empty:
                 log.warning("  Şut verisi yok.")
@@ -316,40 +335,54 @@ def ingest_shots(
 
             log.info(f"  {len(df)} şut çekildi.")
 
+            # soccerdata yeni kolon adları: location_x/y, xg, game_id
+            # eski format: X/Y, xG, match_id — ikisini de dene
+            def _col(row, *names, default=0):
+                for n in names:
+                    v = row.get(n)
+                    if v is not None and str(v) not in ("", "nan"):
+                        return v
+                return default
+
             for _, row in df.iterrows():
                 stats["islendi"] += 1
-                player_name = str(row.get("player", ""))
-                match = best_match(player_name, db_players, threshold=0.45)
+                player_name = str(_col(row, "player", default=""))
+                if not player_name:
+                    stats["atildi"] += 1
+                    continue
+
+                match = best_match(player_name, db_players, threshold=0.40)
                 if not match:
                     stats["atildi"] += 1
                     continue
 
-                db_p       = match["player"]
-                sb_x, sb_y = us_to_sb(float(row.get("X", 0) or 0), float(row.get("Y", 0) or 0))
-                xg         = float(row.get("xG", 0) or 0)
-                gol_mu     = str(row.get("result", "")).lower() == "goal"
+                db_p   = match["player"]
+                x_raw  = float(_col(row, "location_x", "X", default=0))
+                y_raw  = float(_col(row, "location_y", "Y", default=0))
+                sb_x, sb_y = us_to_sb(x_raw, y_raw)
+                xg     = float(_col(row, "xg", "xG", default=0))
+                result = str(_col(row, "result", default="")).lower()
+                gol_mu = result in ("goal", "gol")
 
                 if dry_run:
-                    log.info(
-                        f"  {player_name:25s} → sb({sb_x},{sb_y}) "
-                        f"xG={xg:.3f} {'⚽' if gol_mu else ''}"
-                    )
+                    log.info(f"  {player_name:25s} → sb({sb_x},{sb_y}) xG={xg:.3f} {'⚽' if gol_mu else ''}")
                     continue
 
-                # matches tablosunda Understat maç satırı bul/oluştur
-                us_match_id  = int(row.get("match_id") or row.get("game_id") or 0)
-                home_team    = str(row.get("home_team", ""))
-                away_team    = str(row.get("away_team", ""))
-                match_date   = str(row.get("date", "2024-01-01"))[:10]
+                us_match_id = int(_col(row, "game_id", "match_id", default=0))
+                team_info   = game_teams.get(us_match_id, {})
+                home_team   = str(_col(row, "h_team", default="") or team_info.get("home", ""))
+                away_team   = str(_col(row, "a_team", default="") or team_info.get("away", ""))
+                match_date  = str(_col(row, "date", default="") or team_info.get("date", "2024-01-01"))[:10]
 
                 with engine.begin() as conn:
-                    existing = conn.execute(text("""
-                        SELECT id FROM matches
-                        WHERE turnuva = :tur AND source = 'understat'
-                        LIMIT 1
-                    """), {"tur": f"us_{us_match_id}"}).fetchone()
+                    existing = conn.execute(text(
+                        "SELECT id FROM matches WHERE turnuva = :tur AND source = 'understat' LIMIT 1"
+                    ), {"tur": f"us_{us_match_id}"}).fetchone()
 
                     if not existing:
+                        if not home_team or not away_team:
+                            stats["atildi"] += 1
+                            continue
                         home_id = get_or_create_team(conn, home_team, lig_tr)
                         away_id = get_or_create_team(conn, away_team, lig_tr)
                         if home_id == away_id:
@@ -359,10 +392,8 @@ def ingest_shots(
                             INSERT INTO matches (tarih, ev_takim_id, deplasman_takim_id, turnuva, source)
                             VALUES (:t, :ev, :dep, :tur, 'understat')
                             ON CONFLICT DO NOTHING RETURNING id
-                        """), {
-                            "t": match_date, "ev": home_id, "dep": away_id,
-                            "tur": f"us_{us_match_id}",
-                        }).fetchone()
+                        """), {"t": match_date, "ev": home_id, "dep": away_id,
+                               "tur": f"us_{us_match_id}"}).fetchone()
                         if not mac_result:
                             stats["atildi"] += 1
                             continue
@@ -374,10 +405,8 @@ def ingest_shots(
                         INSERT INTO shots (oyuncu_id, mac_id, x_konum, y_konum, xg, gol_mu, source)
                         VALUES (:pid, :mid, :x, :y, :xg, :gol, 'understat')
                         ON CONFLICT DO NOTHING
-                    """), {
-                        "pid": db_p["id"], "mid": mac_id,
-                        "x": sb_x, "y": sb_y, "xg": xg, "gol": gol_mu,
-                    })
+                    """), {"pid": db_p["id"], "mid": mac_id,
+                           "x": sb_x, "y": sb_y, "xg": xg, "gol": gol_mu})
                 stats["eklendi"] += 1
 
             time.sleep(2.0)
