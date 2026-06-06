@@ -93,7 +93,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,
     allow_origin_regex=r"https://.*\.vercel\.app",   # tüm Vercel preview URL'leri
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 

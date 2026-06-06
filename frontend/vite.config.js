@@ -14,6 +14,7 @@ export default defineConfig({
       "/fixtures": "http://localhost:8000",
       "/matches":  "http://localhost:8000",
       "/h2h":      "http://localhost:8000",
+      "/auth":     "http://localhost:8000",
     },
   },
 });
