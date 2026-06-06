@@ -126,20 +126,13 @@ def load_db_players(engine) -> list[dict]:
         ).mappings().fetchall()
     return [dict(r) for r in rows]
 
-def get_or_create_team(conn, team_name: str, ulke: str = "") -> int:
-    """Takımı teams tablosunda bulur, yoksa ekler."""
-    r = conn.execute(text(
-        "SELECT id FROM teams WHERE isim = :n LIMIT 1"
-    ), {"n": team_name}).fetchone()
-    if r:
-        return r[0]
-    # Sequence senkronunu düzelt, sonra insert et
-    conn.execute(text(
-        "SELECT setval('teams_id_seq', (SELECT MAX(id) FROM teams))"
-    ))
-    nr = conn.execute(text(
-        "INSERT INTO teams (isim, ulke) VALUES (:n, :u) RETURNING id"
-    ), {"n": team_name, "u": ulke}).fetchone()
+def get_or_create_team(conn, team_name: str, ulke: str = "") -> Optional[int]:
+    """Takımı teams tablosunda bulur, yoksa ekler (UNIQUE constraint ile güvenli)."""
+    nr = conn.execute(text("""
+        INSERT INTO teams (isim, ulke) VALUES (:n, :u)
+        ON CONFLICT (isim) DO UPDATE SET ulke = EXCLUDED.ulke
+        RETURNING id
+    """), {"n": team_name, "u": ulke}).fetchone()
     return nr[0] if nr else None
 
 
