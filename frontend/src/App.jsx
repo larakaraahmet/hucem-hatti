@@ -35,14 +35,18 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "";
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #f1f5f9; font-family: 'Inter','Segoe UI',sans-serif; color: #0f172a; }
-
-/* ── Dark Mode CSS Variables ── */
-:root { --bg:#f1f5f9; --surface:#ffffff; --border:#e2e8f0; --text:#0f172a; --sub:#64748b; }
-[data-theme=dark] { --bg:#0f172a; --surface:#1e293b; --border:#334155; --text:#f1f5f9; --sub:#94a3b8; }
-[data-theme=dark] body { background: var(--bg) !important; color: var(--text) !important; }
-.hh-surface { background: var(--surface); border-color: var(--border); }
-.hh-text { color: var(--text); }
+:root { --bg:#f1f5f9; --surface:#ffffff; --border:#e2e8f0; --text:#0f172a; --sub:#64748b; --card:#ffffff; --input-bg:#ffffff; --input-text:#0f172a; }
+[data-theme=dark] { --bg:#0f172a; --surface:#1e293b; --border:#334155; --text:#f1f5f9; --sub:#94a3b8; --card:#1e293b; --input-bg:#0f172a; --input-text:#f1f5f9; }
+body { background: var(--bg); font-family: 'Inter','Segoe UI',sans-serif; color: var(--text); transition: background .25s, color .25s; }
+.hh-surface { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
+.hh-text { color: var(--text) !important; }
+.hh-sub { color: var(--sub) !important; }
+[data-theme=dark] input { background: var(--input-bg) !important; color: var(--input-text) !important; border-color: var(--border) !important; }
+[data-theme=dark] .hh-card { background: var(--card) !important; border-color: var(--border) !important; }
+[data-theme=dark] .hh-player-card { background: var(--surface) !important; border-color: var(--border) !important; }
+[data-theme=dark] .hh-dropdown { background: var(--surface) !important; border-color: var(--border) !important; }
+[data-theme=dark] .hh-stat-item { background: #0f172a !important; }
+[data-theme=dark] .hh-badge { filter: brightness(0.85); }
 
 /* ── Mobile ── */
 .hh-hamburger { display: none; align-items:center; justify-content:center; }
@@ -1698,9 +1702,10 @@ export default function App() {
 
       <div style={{
         minHeight:"100vh",
-        background:"#f1f5f9",
+        background:"var(--bg)",
+        color:"var(--text)",
         opacity: splashDone ? 1 : 0,
-        transition:"opacity .5s ease",
+        transition:"opacity .5s ease, background .25s, color .25s",
       }}>
         {/* ── HEADER ── */}
         <header style={{ ...S.header, position:"sticky" }}>

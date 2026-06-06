@@ -91,6 +91,7 @@ _REPL = {
 
 def normalize_name(name: str) -> str:
     n = (name or "").lower().strip()
+    n = n.replace("-", " ").replace("_", " ")  # Mbappe-Lottin → Mbappe Lottin
     for k, v in _REPL.items():
         n = n.replace(k, v)
     return re.sub(r"\s+", " ", n)
