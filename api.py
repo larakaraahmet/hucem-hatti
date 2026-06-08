@@ -139,6 +139,7 @@ class PlayerProfileResponse(BaseModel):
     per90:         Per90Metrics
     club_takim:    Optional[str] = None
     club_lig:      Optional[str] = None
+    has_data:      bool = True
 
 
 class SimilarPlayerResponse(BaseModel):
@@ -223,6 +224,7 @@ class PlayerSummary(BaseModel):
     isim:      str
     mevki:     Optional[str]
     milliyet:  Optional[str]
+    has_data:  Optional[bool] = True
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +232,8 @@ class PlayerSummary(BaseModel):
 # ---------------------------------------------------------------------------
 
 _SQL_PLAYER_BASE = """
-SELECT id, isim, mevki, dogum_tarihi::text, milliyet, current_club, current_club_ulke
+SELECT id, isim, mevki, dogum_tarihi::text, milliyet, current_club, current_club_ulke,
+       COALESCE(has_data, true) AS has_data
 FROM players
 WHERE id = :player_id
 """
@@ -320,6 +323,12 @@ def get_player_profile(player_id: int, engine: Engine = Depends(get_engine)):
         club_takim = base["current_club"]
         club_lig   = base.get("current_club_ulke")
 
+    # has_data: players tablosundan al (ingest sırasında doldurulur)
+    has_data_val = base.get("has_data", True)
+    # Fallback: metrics varsa True say
+    if has_data_val is None:
+        has_data_val = metrics["mac_sayisi"] > 0 or club_takim is not None
+
     return PlayerProfileResponse(
         oyuncu_id     = player_id,
         isim          = base["isim"],
@@ -331,6 +340,7 @@ def get_player_profile(player_id: int, engine: Engine = Depends(get_engine)):
         per90         = Per90Metrics(**metrics["per90"]),
         club_takim    = club_takim,
         club_lig      = club_lig,
+        has_data      = bool(has_data_val),
     )
 
 
@@ -742,7 +752,8 @@ def search_players(
     where = " AND ".join(conditions)
     with engine.connect() as conn:
         rows = conn.execute(text(f"""
-            SELECT id AS oyuncu_id, isim, mevki, milliyet
+            SELECT id AS oyuncu_id, isim, mevki, milliyet,
+                   COALESCE(has_data, true) AS has_data
             FROM players
             WHERE {where}
             ORDER BY isim

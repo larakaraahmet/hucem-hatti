@@ -812,10 +812,20 @@ function PlayerSearch({ onSelect, placeholder = "Oyuncu ara…" }) {
       {open && (
         <ul style={S.dropdown}>
           {res.map(p => (
-            <li key={p.oyuncu_id} data-dd onMouseDown={() => pick(p)} style={S.ddItem}>
+            <li key={p.oyuncu_id} data-dd onMouseDown={() => pick(p)} style={{
+              ...S.ddItem,
+              ...(p.has_data === false ? { opacity: 0.6 } : {}),
+            }}>
               <span style={S.ddName}>{p.isim}</span>
               {p.mevki    && <span style={S.ddMeta}>{p.mevki}</span>}
               {p.milliyet && <span style={S.ddMeta}>{flag(p.milliyet)} {p.milliyet}</span>}
+              {p.has_data === false && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, color: "#94a3b8",
+                  background: "#f1f5f9", border: "1px solid #e2e8f0",
+                  borderRadius: 4, padding: "1px 5px", marginLeft: "auto",
+                }}>veri yok</span>
+              )}
             </li>
           ))}
         </ul>
@@ -1398,45 +1408,93 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
         );
       })()}
 
-      {/* ── Bölüm navigasyonu ── */}
-      <SectionNav />
+      {/* ── Veri Yok Durumu ── */}
+      {profile && profile.has_data === false && (
+        <div style={{
+          background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+          border: "1.5px dashed #cbd5e1",
+          borderRadius: 16, padding: "36px 28px", textAlign: "center",
+          marginBottom: 24,
+        }}>
+          <div style={{ fontSize: 52, marginBottom: 12 }}>📭</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", marginBottom: 8 }}>
+            İstatistik Verisi Bulunamadı
+          </div>
+          <div style={{ fontSize: 13, color: "#64748b", maxWidth: 420, margin: "0 auto", lineHeight: 1.7 }}>
+            <strong>{profile.isim}</strong> için şu anda istatistik verisi mevcut değil.
+            Bu oyuncu büyük ihtimalle emekli, küçük bir ligde aktif ya da veri kaynaklarımızda
+            henüz yer almıyor.
+          </div>
+          <div style={{
+            display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap",
+            marginTop: 20,
+          }}>
+            {[
+              { icon: "⚽", label: "Understat", sub: "Big 5 ligleri kapsar" },
+              { icon: "📊", label: "StatsBomb", sub: "Büyük turnuvalar" },
+              { icon: "🗄️", label: "FBref",    sub: "Sezon özeti verileri" },
+            ].map(s => (
+              <div key={s.label} style={{
+                background: "#ffffff", border: "1px solid #e2e8f0",
+                borderRadius: 10, padding: "10px 16px", minWidth: 120,
+                opacity: 0.7,
+              }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#475569" }}>{s.label}</div>
+                <div style={{ fontSize: 10, color: "#94a3b8" }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+          {profile.milliyet && (
+            <div style={{ marginTop: 20, fontSize: 12, color: "#94a3b8" }}>
+              {flag(profile.milliyet)} {profile.milliyet} milliyetli oyunculara ait istatistikler
+              büyük turnuvalarda (WC/Euro) oynandıkça eklenir.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Bölüm navigasyonu (sadece veri varsa) ── */}
+      {profile?.has_data !== false && <SectionNav />}
 
       {/* ── Maç geçmişi ── */}
-      <div id="sec-maclar">
-        <PlayerMatches playerId={playerId} milliyet={profile?.milliyet} competition={competition} />
-      </div>
+      {profile?.has_data !== false && (
+        <div id="sec-maclar">
+          <PlayerMatches playerId={playerId} milliyet={profile?.milliyet} competition={competition} />
+        </div>
+      )}
 
       {/* ── Kaleci Analizi (sadece GK için göster) ── */}
-      {profile?.mevki?.includes("Goalkeeper") && (
+      {profile?.has_data !== false && profile?.mevki?.includes("Goalkeeper") && (
         <GoalkeeperStats playerId={playerId} />
       )}
 
       {/* ════ PERFORMANS ANALİZİ ════ */}
-      <div id="sec-analiz" style={S.sectionHeader}>
+      {profile?.has_data !== false && <div id="sec-analiz" style={S.sectionHeader}>
         <div style={{ ...S.sectionAccent, background: "#38bdf8" }} />
         <span style={S.sectionHeading}>📊 Performans Analizi</span>
-      </div>
+      </div>}
 
-      <div className="hh-grid2">
+      {profile?.has_data !== false && <div className="hh-grid2">
         <section style={S.cell}><PercentileBars  playerId={playerId} /></section>
         <section style={S.cell}><XGTimeline      playerId={playerId} milliyet={profile?.milliyet} competition={competition} /></section>
-      </div>
+      </div>}
 
-      <div className="hh-grid2">
+      {profile?.has_data !== false && <div className="hh-grid2">
         <section style={S.cell}><ContribTimeline playerId={playerId} milliyet={profile?.milliyet} competition={competition} /></section>
         <section style={S.cell}><ShotZones       playerId={playerId} competition={competition} /></section>
-      </div>
+      </div>}
 
-      <div className="hh-grid2">
+      {profile?.has_data !== false && <div className="hh-grid2">
         <section style={S.cell}><GoalTiming      playerId={playerId} competition={competition} /></section>
-      </div>
+      </div>}
 
-      <div className="hh-grid2">
+      {profile?.has_data !== false && <div className="hh-grid2">
         <section style={S.cell}><ShotQuality      playerId={playerId} competition={competition} /></section>
-      </div>
+      </div>}
 
       {/* xG Trend (Understat — verisi varsa göster) */}
-      {xgTrend.length > 0 && (
+      {profile?.has_data !== false && xgTrend.length > 0 && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ ...S.sectionHeader, marginBottom: 8 }}>
             <div style={{ ...S.sectionAccent, background:"#10b981" }} />
@@ -1479,53 +1537,56 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
 
       {/* ── Yardımetre — xT / Katkı Değeri ── */}
       <div className="hh-grid2">
-        <section style={S.cell}><Yardimetre playerId={playerId} /></section>
+        {profile?.has_data !== false && <section style={S.cell}><Yardimetre playerId={playerId} /></section>}
         <section style={S.cell}><CompetitionStats playerId={playerId} /></section>
       </div>
 
       {/* ── Saha görünümleri ── */}
-      <div id="sec-saha" style={{ height:1, marginTop:4 }} />
-      <div className="hh-grid2">
-        <section style={S.cell}><PitchView        playerId={playerId} playerName={profile?.isim ?? playerName} competition={competition} /></section>
-        <section style={S.cell} id="sec-profil"><RadarChart       playerId={playerId} playerName={profile?.isim ?? playerName} /></section>
-      </div>
-
+      {profile?.has_data !== false && <>
+        <div id="sec-saha" style={{ height:1, marginTop:4 }} />
+        <div className="hh-grid2">
+          <section style={S.cell}><PitchView        playerId={playerId} playerName={profile?.isim ?? playerName} competition={competition} /></section>
+          <section style={S.cell} id="sec-profil"><RadarChart       playerId={playerId} playerName={profile?.isim ?? playerName} /></section>
+        </div>
+      </>}
 
       {/* ════ BAHİS & TAHMİN ════ */}
-      <div id="sec-bahis" style={{ ...S.sectionHeader, marginTop: 12 }}>
-        <div style={{ ...S.sectionAccent, background: "#f59e0b" }} />
-        <span style={{ ...S.sectionHeading, color: "#f59e0b" }}>💰 Bahis & Tahmin</span>
-      </div>
-
-      <div className="hh-grid2">
-        <section style={S.cell}><FormStrip        playerId={playerId} competition={competition} /></section>
-        <section style={S.cell}><BettingPanel     playerId={playerId} competition={competition} /></section>
-      </div>
-
-      {/* WC 2026 Tahmin */}
-      {p90 && (
-        <div style={{ marginBottom:14 }}>
-          <WCPrediction
-            xg90={p90.xg90 ?? 0}
-            asist90={p90.asist90 ?? 0}
-            playerName={profile?.isim ?? playerName}
-          />
+      {profile?.has_data !== false && <>
+        <div id="sec-bahis" style={{ ...S.sectionHeader, marginTop: 12 }}>
+          <div style={{ ...S.sectionAccent, background: "#f59e0b" }} />
+          <span style={{ ...S.sectionHeading, color: "#f59e0b" }}>💰 Bahis & Tahmin</span>
         </div>
-      )}
 
-      <div className="hh-grid2">
-        <section style={S.cell}><HomeAwaySplit    playerId={playerId} milliyet={profile?.milliyet} competition={competition} /></section>
-        <section style={S.cell}><ScoringPattern   playerId={playerId} competition={competition} /></section>
-      </div>
+        <div className="hh-grid2">
+          <section style={S.cell}><FormStrip        playerId={playerId} competition={competition} /></section>
+          <section style={S.cell}><BettingPanel     playerId={playerId} competition={competition} /></section>
+        </div>
 
-      <div className="hh-grid2">
-        <section style={S.cell}><MinutesImpact    playerId={playerId} competition={competition} /></section>
-        <section style={S.cell}><AssistQuality    playerId={playerId} competition={competition} /></section>
-      </div>
+        {/* WC 2026 Tahmin */}
+        {p90 && (
+          <div style={{ marginBottom:14 }}>
+            <WCPrediction
+              xg90={p90.xg90 ?? 0}
+              asist90={p90.asist90 ?? 0}
+              playerName={profile?.isim ?? playerName}
+            />
+          </div>
+        )}
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:14, marginBottom:48 }}>
-        <section style={S.cell}><OpponentProfile  playerId={playerId} milliyet={profile?.milliyet} competition={competition} /></section>
-      </div>
+        <div className="hh-grid2">
+          <section style={S.cell}><HomeAwaySplit    playerId={playerId} milliyet={profile?.milliyet} competition={competition} /></section>
+          <section style={S.cell}><ScoringPattern   playerId={playerId} competition={competition} /></section>
+        </div>
+
+        <div className="hh-grid2">
+          <section style={S.cell}><MinutesImpact    playerId={playerId} competition={competition} /></section>
+          <section style={S.cell}><AssistQuality    playerId={playerId} competition={competition} /></section>
+        </div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:14, marginBottom:48 }}>
+          <section style={S.cell}><OpponentProfile  playerId={playerId} milliyet={profile?.milliyet} competition={competition} /></section>
+        </div>
+      </>}
     </>
   );
 }
