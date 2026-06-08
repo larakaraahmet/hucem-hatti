@@ -166,7 +166,7 @@ export default function SimulatePage() {
         🎮 Maç Simülatörü
       </h2>
       <p style={{ fontSize: 13, color: "var(--sub)", marginBottom: 24 }}>
-        Gerçek xG & savunma verileriyle 10.000 maç simülasyonu — Poisson modeli
+        Gerçek xG & savunma verileriyle 1.000.000 maç simülasyonu — Poisson modeli
       </p>
 
       {/* Takım seçimi */}
@@ -259,7 +259,7 @@ export default function SimulatePage() {
 
             <div style={{ fontSize: 11, fontWeight: 800, color: "#94a3b8",
                           letterSpacing: ".15em", textTransform: "uppercase", marginBottom: 16 }}>
-              Simülasyon Sonucu (10.000 maç)
+              Simülasyon Sonucu (1.000.000 maç)
             </div>
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24 }}>

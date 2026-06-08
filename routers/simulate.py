@@ -98,7 +98,7 @@ def _team_stats(milliyet: str, engine) -> dict:
     }
 
 
-def _simulate_match(stats_a: dict, stats_b: dict, n_sim: int = 10_000) -> dict:
+def _simulate_match(stats_a: dict, stats_b: dict, n_sim: int = 1_000_000) -> dict:
     """n_sim Monte Carlo çalıştırır, sonuçları özetler."""
     rng = np.random.default_rng()
 
