@@ -188,6 +188,17 @@ class PlayerMatchRecord(BaseModel):
     xg:               Optional[float]
     xa:               Optional[float]
     progressive_pass: Optional[int]
+    # Stadyum bilgileri
+    saha_isim:        Optional[str]    = None
+    saha_sehir:       Optional[str]    = None
+    saha_ulke:        Optional[str]    = None
+    saha_kapasite:    Optional[int]    = None
+    saha_rakim:       Optional[int]    = None
+    saha_cim_turu:    Optional[str]    = None
+    saha_lat:         Optional[float]  = None
+    saha_lon:         Optional[float]  = None
+    saha_acilis_yili: Optional[int]    = None
+    saha_boyut:       Optional[str]    = None
 
 
 class CompetitionStatsRecord(BaseModel):
@@ -468,11 +479,22 @@ def get_player_matches(
                 COALESCE(pms.isabetli_sut,    0) AS isabetli_sut,
                 pms.xg,
                 pms.xa,
-                COALESCE(pms.progressive_pass, 0) AS progressive_pass
+                COALESCE(pms.progressive_pass, 0) AS progressive_pass,
+                s.isim            AS saha_isim,
+                s.sehir           AS saha_sehir,
+                s.ulke            AS saha_ulke,
+                s.kapasite        AS saha_kapasite,
+                s.rakim           AS saha_rakim,
+                s.cim_turu        AS saha_cim_turu,
+                s.lat::float      AS saha_lat,
+                s.lon::float      AS saha_lon,
+                s.acilis_yili     AS saha_acilis_yili,
+                s.boyut           AS saha_boyut
             FROM player_match_stats pms
             JOIN matches m  ON m.id  = pms.mac_id
             JOIN teams   t1 ON t1.id = m.ev_takim_id
             JOIN teams   t2 ON t2.id = m.deplasman_takim_id
+            LEFT JOIN stadiums s ON s.id = m.saha_id
             WHERE pms.oyuncu_id = :player_id
               AND (:turnuva IS NULL OR m.turnuva = :turnuva)
             ORDER BY m.tarih DESC
@@ -490,20 +512,33 @@ def get_player_matches(
                     t1.isim           AS ev_takim,
                     t2.isim           AS deplasman_takim,
                     NULL::int         AS dakika,
-                    COALESCE(SUM(CASE WHEN s.gol_mu THEN 1 ELSE 0 END), 0)  AS gol,
-                    0                                                         AS asist,
-                    COUNT(s.id)                                               AS sut,
-                    COALESCE(SUM(CASE WHEN s.gol_mu THEN 1 ELSE 0 END), 0)  AS isabetli_sut,
-                    ROUND(SUM(COALESCE(s.xg, 0))::numeric, 3)               AS xg,
-                    NULL::numeric                                             AS xa,
-                    0                                                         AS progressive_pass
-                FROM shots s
-                JOIN matches m  ON m.id  = s.mac_id
-                JOIN teams   t1 ON t1.id = m.ev_takim_id
-                JOIN teams   t2 ON t2.id = m.deplasman_takim_id
-                WHERE s.oyuncu_id = :player_id
+                    COALESCE(SUM(CASE WHEN s2.gol_mu THEN 1 ELSE 0 END), 0)  AS gol,
+                    0                                                          AS asist,
+                    COUNT(s2.id)                                               AS sut,
+                    COALESCE(SUM(CASE WHEN s2.gol_mu THEN 1 ELSE 0 END), 0)  AS isabetli_sut,
+                    ROUND(SUM(COALESCE(s2.xg, 0))::numeric, 3)               AS xg,
+                    NULL::numeric                                              AS xa,
+                    0                                                          AS progressive_pass,
+                    st.isim           AS saha_isim,
+                    st.sehir          AS saha_sehir,
+                    st.ulke           AS saha_ulke,
+                    st.kapasite       AS saha_kapasite,
+                    st.rakim          AS saha_rakim,
+                    st.cim_turu       AS saha_cim_turu,
+                    st.lat::float     AS saha_lat,
+                    st.lon::float     AS saha_lon,
+                    st.acilis_yili    AS saha_acilis_yili,
+                    st.boyut          AS saha_boyut
+                FROM shots s2
+                JOIN matches m   ON m.id   = s2.mac_id
+                JOIN teams   t1  ON t1.id  = m.ev_takim_id
+                JOIN teams   t2  ON t2.id  = m.deplasman_takim_id
+                LEFT JOIN stadiums st ON st.id = m.saha_id
+                WHERE s2.oyuncu_id = :player_id
                   AND (:turnuva IS NULL OR m.turnuva = :turnuva)
-                GROUP BY m.id, m.tarih, m.turnuva, t1.isim, t2.isim
+                GROUP BY m.id, m.tarih, m.turnuva, t1.isim, t2.isim,
+                         st.isim, st.sehir, st.ulke, st.kapasite, st.rakim,
+                         st.cim_turu, st.lat, st.lon, st.acilis_yili, st.boyut
                 ORDER BY m.tarih DESC
             """), {"player_id": player_id, "turnuva": turnuva}).mappings().fetchall()
 
@@ -936,6 +971,13 @@ def get_fixtures(
             f.stadyum_sehir,
             f.stadyum_ulke,
             f.stadyum_kapasite,
+            f.stadyum_rakim,
+            f.stadyum_cim_turu,
+            f.stadyum_lat::float     AS stadyum_lat,
+            f.stadyum_lon::float     AS stadyum_lon,
+            f.stadyum_acilis_yili,
+            f.stadyum_boyut,
+            f.stadyum_cerceve,
             f.durum,
             f.ev_gol,
             f.dep_gol,
