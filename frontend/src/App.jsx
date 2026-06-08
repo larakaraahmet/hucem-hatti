@@ -839,7 +839,17 @@ function PlayerSearch({ onSelect, placeholder = "Oyuncu ara…" }) {
 function TeamsPage({ onTeamSelect }) {
   const [teams,   setTeams]   = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab,     setTab]     = useState("maclar"); // "maclar" | "oyuncular" | "gruplar" | "eleme"
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Tab URL'den oku, yoksa "maclar"
+  const urlTab = new URLSearchParams(location.search).get("tab") || "maclar";
+  const setTab = (key) => {
+    const params = new URLSearchParams(location.search);
+    params.set("tab", key);
+    navigate(`/?${params.toString()}`, { replace: true });
+  };
+  const tab = urlTab;
 
   useEffect(() => {
     fetch(`${API_BASE}/teams`)
@@ -893,8 +903,9 @@ function TeamsPage({ onTeamSelect }) {
       {/* ── Ana sekme navigasyonu ── */}
       <div style={{
         display:"flex", gap:8, marginBottom:16,
-        background:"#ffffff", borderRadius:12, padding:6,
-        border:"1px solid #e2e8f0", boxShadow:"0 1px 3px rgba(0,0,0,.06)",
+        background:"var(--surface)", borderRadius:12, padding:6,
+        border:"1px solid var(--border)", boxShadow:"0 1px 3px rgba(0,0,0,.06)",
+        overflowX:"auto", WebkitOverflowScrolling:"touch",
       }}>
         {[
           { key:"maclar",    label:"📅 Maçlar",              desc:"WC 2026 fikstür & sonuçlar" },
@@ -904,13 +915,13 @@ function TeamsPage({ onTeamSelect }) {
           { key:"eleme",     label:"🏆 Eleme",               desc:"Knockout bracket" },
         ].map(({ key, label, desc }) => (
           <button key={key} onClick={() => setTab(key)} style={{
-            flex:1, padding:"10px 12px", borderRadius:8, cursor:"pointer",
+            flex:"0 0 auto", padding:"10px 14px", borderRadius:8, cursor:"pointer",
             border:`1.5px solid ${tab===key ? "#f59e0b" : "transparent"}`,
             background: tab===key ? "#fef3c7" : "transparent",
-            textAlign:"left", transition:"all .18s",
+            textAlign:"left", transition:"all .18s", whiteSpace:"nowrap",
           }}>
-            <div style={{ fontSize:13, fontWeight:800, color: tab===key ? "#d97706" : "#0f172a" }}>{label}</div>
-            <div style={{ fontSize:10, color:"#94a3b8", marginTop:2 }}>{desc}</div>
+            <div style={{ fontSize:13, fontWeight:800, color: tab===key ? "#d97706" : "var(--text)" }}>{label}</div>
+            <div style={{ fontSize:10, color:"var(--sub)", marginTop:2 }}>{desc}</div>
           </button>
         ))}
       </div>
@@ -1717,18 +1728,32 @@ export default function App() {
   };
   const isFav = id => favorites.some(f => f.id === id);
 
-  // Yeni sayfalara geçince state-based sayfayı "teams"'e sıfırla
+  // URL'den oyuncu ID'sini oku (/oyuncu/:id)
   useEffect(() => {
-    if (location.pathname === "/") {
-      // nothing
+    const m = location.pathname.match(/^\/oyuncu\/(\d+)$/);
+    if (m) {
+      const id = parseInt(m[1]);
+      if (id !== playerId) {
+        setPlayerId(id);
+        setPlayerName(null); // API'den gelecek
+        setPage("player");
+      }
+    } else if (location.pathname.startsWith("/takim/")) {
+      const ulke = decodeURIComponent(location.pathname.replace("/takim/", ""));
+      setSelTeam(ulke); setPage("team");
+    } else if (location.pathname === "/" && page === "player") {
+      setPage(selTeam ? "team" : "teams");
     }
   }, [location.pathname]);
 
   const goPlayer = (id, name) => {
     setPlayerId(id); setPlayerName(name); setPage("player");
-    navigate("/");
+    navigate(`/oyuncu/${id}`, { state: { name } });
   };
-  const goTeam   = ulke => { setSelTeam(ulke); setPage("team"); navigate("/"); };
+  const goTeam = ulke => {
+    setSelTeam(ulke); setPage("team");
+    navigate(`/takim/${encodeURIComponent(ulke)}`);
+  };
 
   if (!auth) return <PasswordGate onAuth={() => setAuth(true)} />;
 
@@ -1748,7 +1773,7 @@ export default function App() {
           <div style={S.headerStripe} />
           <div style={S.headerRow}>
             {/* Sol: Logo */}
-            <Link to="/" onClick={() => { setPage("teams"); setMobileMenuOpen(false); }} style={{ textDecoration:"none", flexShrink:0 }}>
+            <Link to="/" onClick={() => { setPage("teams"); setSelTeam(null); setMobileMenuOpen(false); }} style={{ textDecoration:"none", flexShrink:0 }}>
               <span style={S.logo}>
                 {"HüCem Hattı".split("").map((ch, i) => {
                   const blue = new Set([0,6]), gold = new Set([2]);
@@ -1765,7 +1790,7 @@ export default function App() {
 
             {/* Orta: Nav linkleri */}
             <div className="hh-header-nav" style={S.navRow}>
-              <NavLink to="/" exact onClick={() => setPage("teams")}>🏠 Takımlar</NavLink>
+              <NavLink to="/" exact onClick={() => { setPage("teams"); setSelTeam(null); }}>🏠 Takımlar</NavLink>
               <NavLink to="/leaders">🏆 Liderler</NavLink>
               <NavLink to="/compare">⚖️ Karşılaştır</NavLink>
             </div>
@@ -1853,7 +1878,7 @@ export default function App() {
           {/* Mobile dropdown menu */}
           {mobileMenuOpen && (
             <div className="hh-mobile-menu">
-              <NavLink to="/" exact onClick={() => { setPage("teams"); setMobileMenuOpen(false); }}>🏠 Takımlar</NavLink>
+              <NavLink to="/" exact onClick={() => { setPage("teams"); setSelTeam(null); setMobileMenuOpen(false); }}>🏠 Takımlar</NavLink>
               <NavLink to="/leaders" onClick={() => setMobileMenuOpen(false)}>🏆 Liderler</NavLink>
               <NavLink to="/compare" onClick={() => setMobileMenuOpen(false)}>⚖️ Karşılaştır</NavLink>
             </div>
@@ -1871,11 +1896,15 @@ export default function App() {
               <>
                 {page === "teams"  && <TeamsPage onTeamSelect={goTeam} />}
                 {page === "team"   && selTeam  && (
-                  <TeamPage ulke={selTeam} onPlayerSelect={goPlayer} onBack={() => setPage("teams")} />
+                  <TeamPage ulke={selTeam} onPlayerSelect={goPlayer}
+                    onBack={() => { setPage("teams"); navigate("/"); }} />
                 )}
                 {page === "player" && playerId && (
                   <PlayerPage playerId={playerId} playerName={playerName}
-                    onBack={() => setPage(selTeam ? "team" : "teams")}
+                    onBack={() => {
+                      if (selTeam) { setPage("team"); navigate(`/takim/${encodeURIComponent(selTeam)}`); }
+                      else { setPage("teams"); navigate("/"); }
+                    }}
                     toggleFav={toggleFav} isFav={isFav} />
                 )}
               </>
