@@ -223,16 +223,6 @@ export default function SimulatePage() {
             }}>
             {mutation.isPending ? "⏳ Simüle ediliyor…" : "⚽ Simüle Et"}
           </button>
-          {res && (
-            <button onClick={() => { const a=teamA; setTeamA(teamB); setTeamB(a); }}
-              style={{
-                background: "transparent", border: "1.5px solid #e2e8f0",
-                borderRadius: 10, color: "#64748b", fontSize: 14,
-                fontWeight: 700, padding: "11px 16px", cursor: "pointer",
-              }} title="Takımları ters çevir">
-              ⇄
-            </button>
-          )}
         </div>
       </div>
 
