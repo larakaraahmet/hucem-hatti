@@ -1,8 +1,11 @@
 /**
  * HüCem Hattı — 2026 Dünya Kupası Oyuncu Analiz Platformu
  */
+import "./styles/globals.css";
 import { useEffect, useState, useRef } from "react";
 import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
+import { usePlayerPhoto } from "./hooks/usePlayerPhoto.js";
+import { usePlayer, usePlayerCompetitions, usePlayerArchetype, usePlayerMarket, usePlayerXgTrend, useTeams, useTeamPlayers, useTeamSummary, useStatsLeaders } from "./hooks/useApi.js";
 import ComparePage from "./pages/ComparePage.jsx";
 import LeadersPage from "./pages/LeadersPage.jsx";
 import RadarChart       from "./components/RadarChart.jsx";
@@ -33,162 +36,7 @@ import WC2026Venues       from "./components/WC2026Venues.jsx";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
-// ─── Global CSS ───────────────────────────────────────────────────────────────
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --bg:#f1f5f9; --surface:#ffffff; --border:#e2e8f0; --text:#0f172a; --sub:#64748b; --card:#ffffff; --input-bg:#ffffff; --input-text:#0f172a; }
-[data-theme=dark] { --bg:#0f172a; --surface:#1e293b; --border:#334155; --text:#f1f5f9; --sub:#94a3b8; --card:#1e293b; --input-bg:#0f172a; --input-text:#f1f5f9; }
-body { background: var(--bg); font-family: 'Inter','Segoe UI',sans-serif; color: var(--text); transition: background .25s, color .25s; }
-.hh-surface { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
-.hh-text { color: var(--text) !important; }
-.hh-sub { color: var(--sub) !important; }
-[data-theme=dark] input { background: var(--input-bg) !important; color: var(--input-text) !important; border-color: var(--border) !important; }
-[data-theme=dark] .hh-card { background: var(--card) !important; border-color: var(--border) !important; }
-[data-theme=dark] .hh-player-card { background: var(--surface) !important; border-color: var(--border) !important; }
-[data-theme=dark] .hh-dropdown { background: var(--surface) !important; border-color: var(--border) !important; }
-[data-theme=dark] .hh-stat-item { background: #0f172a !important; }
-[data-theme=dark] .hh-badge { filter: brightness(0.85); }
-
-/* ── Mobile ── */
-.hh-hamburger { display: none; align-items:center; justify-content:center; }
-@media (max-width: 768px) {
-  .hh-header-nav { display: none !important; }
-  .hh-hamburger { display: flex !important; }
-  .hh-hero-card { flex-direction: column !important; align-items: center !important; }
-  .hh-hero-name { font-size: 18px !important; }
-  .hh-stats-row { flex-wrap: wrap !important; gap: 8px !important; }
-  .hh-main { padding: 12px 10px 60px !important; }
-  .hh-badges { flex-wrap: wrap !important; }
-}
-.hh-mobile-menu {
-  position: absolute; top: 100%; left: 0; right: 0;
-  background: rgba(15,23,42,.98);
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  display: flex; flex-direction: column; gap: 4px; padding: 12px 16px;
-  z-index: 100;
-}
-
-/* ── Splash ──────────────────────────────── */
-@keyframes hh-trophy {
-  0%   { transform: translateY(-90px) scale(0.4) rotate(-15deg); opacity: 0; filter: blur(4px); }
-  55%  { transform: translateY(10px)  scale(1.08) rotate(4deg);  opacity: 1; filter: blur(0); }
-  75%  { transform: translateY(-6px)  scale(0.97) rotate(-1deg); }
-  100% { transform: translateY(0)     scale(1)    rotate(0deg);  }
-}
-@keyframes hh-ball-arc {
-  0%   { transform: translate(-140px, 80px) rotate(-80deg)  scale(0.3); opacity: 0; }
-  55%  { transform: translate(0,     -12px) rotate(250deg)  scale(1.06); opacity: 1; }
-  78%  { transform: translate(0,       5px) rotate(340deg)  scale(0.95); }
-  100% { transform: translate(0,       0)   rotate(360deg)  scale(1); }
-}
-@keyframes hh-letter {
-  0%   { opacity: 0; transform: scale(0.1) rotate(-25deg) translateY(16px); }
-  55%  { transform: scale(1.18) rotate(4deg) translateY(-4px); }
-  80%  { transform: scale(0.96) rotate(-1deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0deg) translateY(0); }
-}
-@keyframes hh-fade-up   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
-@keyframes hh-fadein    { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
-@keyframes hh-splash-out{ 0% { opacity:1; transform:scale(1); } 100% { opacity:0; transform:scale(1.04); } }
-@keyframes hh-shimmer   { from { background-position:-300% center; } to { background-position:300% center; } }
-@keyframes hh-ring      { 0%,100%{ opacity:.55; transform:scale(.88); } 50%{ opacity:.9; transform:scale(1.12); } }
-@keyframes hh-glow-ring { 0%{ transform:scale(.85); opacity:.6; } 65%{ transform:scale(1.8); opacity:0; } 100%{ transform:scale(.85); opacity:0; } }
-
-/* ── Cards ──────────────────────────────── */
-@keyframes hh-card-in { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
-button[data-card]        { transition: all .2s ease !important; }
-button[data-card]:hover  {
-  background: #ffffff !important;
-  border-color: #f59e0b !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,.10), 0 0 0 1px rgba(245,158,11,.25) !important;
-  transform: translateY(-2px) !important;
-}
-
-/* ── Inputs ─────────────────────────────── */
-input { background:#ffffff !important; color:#0f172a !important; }
-input:focus {
-  border-color: #f59e0b !important;
-  box-shadow: 0 0 0 3px rgba(245,158,11,.10) !important;
-}
-
-/* ── Dropdowns ──────────────────────────── */
-li[data-dd]:hover { background: #fef9f0 !important; }
-
-/* ── Match rows ─────────────────────────── */
-.hh-match-row:hover { background: #fef9f0 !important; }
-
-/* ── Scrollbar ──────────────────────────── */
-::-webkit-scrollbar { width:5px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
-::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
-
-/* ── Responsive grid ─────────────────────── */
-.hh-grid2 {
-  display:grid;
-  grid-template-columns:repeat(2, minmax(0,1fr));
-  gap:14px; margin-bottom:14px;
-}
-@media (max-width:680px) { .hh-grid2 { grid-template-columns:1fr; } }
-
-/* ── WC2026 conf header ──────────────────── */
-.hh-conf-header {
-  display:flex; align-items:center; gap:12px;
-  padding:10px 0 8px;
-}
-.hh-conf-header::before, .hh-conf-header::after {
-  content:''; flex:1; height:1px;
-  background:linear-gradient(90deg, transparent, var(--conf-color, #38bdf8), transparent);
-  opacity:.35;
-}
-
-/* ── Team cards ─────────────────────────── */
-.hh-team-card {
-  position:relative; overflow:hidden;
-  display:flex; flex-direction:column; align-items:center; gap:8px;
-  padding:20px 12px 16px;
-  background:#ffffff;
-  border:1px solid #e2e8f0;
-  border-radius:14px; cursor:pointer;
-  transition:all .2s ease;
-  animation:hh-card-in .4s ease forwards;
-  opacity:0;
-  box-shadow:0 1px 3px rgba(0,0,0,.06);
-}
-.hh-team-card:hover {
-  border-color:var(--conf-color, #f59e0b);
-  box-shadow:0 4px 20px rgba(0,0,0,.10), 0 0 0 1px rgba(245,158,11,.2);
-  transform:translateY(-3px);
-}
-.hh-team-card::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:3px;
-  background:var(--conf-color, #38bdf8);
-  opacity:.8;
-}
-
-/* ── Player card ────────────────────────── */
-.hh-player-card {
-  display:flex; flex-direction:column; align-items:flex-start; gap:5px;
-  padding:13px 16px;
-  background:#ffffff; border:1px solid #e2e8f0;
-  border-radius:10px; cursor:pointer; text-align:left; color:inherit;
-  animation:hh-card-in .35s ease forwards; opacity:0;
-  transition:all .18s ease;
-  border-left:3px solid #e2e8f0;
-  box-shadow:0 1px 2px rgba(0,0,0,.04);
-}
-.hh-player-card:hover {
-  border-color:#f59e0b;
-  border-left-color:#f59e0b;
-  transform:translateX(3px);
-  box-shadow:0 4px 16px rgba(0,0,0,.08);
-}
-`;
-if (typeof document !== "undefined" && !document.getElementById("hh-css")) {
-  const el = document.createElement("style");
-  el.id = "hh-css"; el.textContent = CSS; document.head.appendChild(el);
-}
+// CSS globals.css dosyasından import edildi
 
 // ─── Bayraklar ────────────────────────────────────────────────────────────────
 const FLAGS = {
@@ -266,20 +114,7 @@ const TEAM_CONF = {
   "New Zealand":"OFC",
 };
 
-// ─── Player photo hook (backend proxy) ────────────────────────────────────────
-function usePlayerPhoto(playerId) {
-  const [url, setUrl] = useState(null);
-  useEffect(() => {
-    if (!playerId) return;
-    let cancelled = false;
-    fetch(`${API_BASE}/player/${playerId}/photo`)
-      .then(r => r.ok ? r.json() : { url: null })
-      .then(d => { if (!cancelled && d.url) setUrl(d.url); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [playerId]);
-  return url;
-}
+// usePlayerPhoto hooks/usePlayerPhoto.js'den import edildi
 
 // Baş harf avatarı
 function Avatar({ name, size = 96 }) {
@@ -336,20 +171,13 @@ function PlayerPhotoMini({ playerId, name, size = 40 }) {
 const WC_START = new Date("2026-06-11T12:00:00");
 
 function WC2026Ticker() {
-  const [now,     setNow]     = useState(new Date());
-  const [leaders, setLeaders] = useState([]);
-  const [tick,    setTick]    = useState(0);
+  const [now,  setNow]  = useState(new Date());
+  const [tick, setTick] = useState(0);
+  const { data: leaders = [] } = useStatsLeaders();
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    fetch(`${API_BASE}/stats/leaders`)
-      .then(r => r.ok ? r.json() : [])
-      .then(setLeaders)
-      .catch(() => {});
   }, []);
 
   // Ticker döngüsü
@@ -751,7 +579,7 @@ const POS_FILTERS = [
   { key:"FWD", label:"⚡ FWD" },
 ];
 
-function PlayerSearch({ onSelect, placeholder = "Oyuncu ara…" }) {
+function PlayerSearch({ onSelect, placeholder = "Oyuncu ara…", inputRef }) {
   const [q,       setQ]       = useState("");
   const [res,     setRes]     = useState([]);
   const [open,    setOpen]    = useState(false);
@@ -792,6 +620,7 @@ function PlayerSearch({ onSelect, placeholder = "Oyuncu ara…" }) {
       <div style={S.searchBox}>
         <span style={S.searchIcon}>🔍</span>
         <input
+          ref={inputRef}
           type="text" value={q} onChange={onChange} placeholder={placeholder}
           onBlur={() => setTimeout(() => setOpen(false), 160)}
           onFocus={() => res.length > 0 && setOpen(true)}
@@ -836,9 +665,8 @@ function PlayerSearch({ onSelect, placeholder = "Oyuncu ara…" }) {
 
 
 // ─── Anasayfa: 2026 WC ülke kartları ─────────────────────────────────────────
-function TeamsPage({ onTeamSelect }) {
-  const [teams,   setTeams]   = useState([]);
-  const [loading, setLoading] = useState(true);
+function TeamsPage({ onTeamSelect, onPlayerSelect, recentlyViewed = [] }) {
+  const { data: teams = [], isLoading: loading } = useTeams();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -850,13 +678,6 @@ function TeamsPage({ onTeamSelect }) {
     navigate(`/?${params.toString()}`, { replace: true });
   };
   const tab = urlTab;
-
-  useEffect(() => {
-    fetch(`${API_BASE}/teams`)
-      .then(r => r.ok ? r.json() : [])
-      .then(d => { setTeams(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
 
   if (loading) return (
     <div style={{ textAlign:"center", paddingTop:80 }}>
@@ -884,6 +705,23 @@ function TeamsPage({ onTeamSelect }) {
 
   return (
     <>
+      {/* Son bakılanlar */}
+      {recentlyViewed.length > 0 && onPlayerSelect && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize:10, fontWeight:800, color:"var(--sub)", letterSpacing:".1em", textTransform:"uppercase", marginBottom:8 }}>
+            Son Bakılanlar
+          </div>
+          <div className="hh-recent-scroll">
+            {recentlyViewed.map(r => (
+              <button key={r.id} className="hh-recent-chip" onClick={() => onPlayerSelect(r.id, r.name)}>
+                <PlayerPhotoMini playerId={r.id} name={r.name} size={28} />
+                {r.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* WC2026 Geri sayım + istatistik akışı */}
       <WC2026Ticker />
 
@@ -989,20 +827,8 @@ function TeamsPage({ onTeamSelect }) {
 
 // ─── Takım sayfası ────────────────────────────────────────────────────────────
 function TeamPage({ ulke, onPlayerSelect, onBack }) {
-  const [players, setPlayers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState(null);
-
-  useEffect(() => {
-    fetch(`${API_BASE}/teams/${encodeURIComponent(ulke)}/players`)
-      .then(r => r.ok ? r.json() : [])
-      .then(d => { setPlayers(d); setLoading(false); })
-      .catch(() => setLoading(false));
-    fetch(`${API_BASE}/teams/${encodeURIComponent(ulke)}/summary`)
-      .then(r => r.ok ? r.json() : null)
-      .then(setSummary)
-      .catch(() => {});
-  }, [ulke]);
+  const { data: players = [], isLoading: loading } = useTeamPlayers(ulke);
+  const { data: summary } = useTeamSummary(ulke);
 
   const confKey   = TEAM_CONF[ulke] ?? "UEFA";
   const confColor = CONF_COLOR[confKey] ?? "#38bdf8";
@@ -1247,31 +1073,20 @@ const ARCHETYPE_META = {
 };
 
 function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
-  const [profile,    setProfile]    = useState(null);
-  const [archetype,  setArchetype]  = useState(null);
-  const [comps,      setComps]      = useState([]);
-  const [competition, setComp]      = useState(null); // null = tümü
-  const [market,     setMarket]     = useState(null);
-  const [xgTrend,    setXgTrend]    = useState([]);
-  const photoUrl = usePlayerPhoto(playerId);
+  const [competition, setComp] = useState(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!playerId) return;
-    setProfile(null); setArchetype(null); setComps([]); setComp(null);
-    setMarket(null);  setXgTrend([]);
+  const photoUrl                    = usePlayerPhoto(playerId);
+  const { data: profile }           = usePlayer(playerId);
+  const { data: comps = [] }        = usePlayerCompetitions(playerId);
+  const { data: archetypeData }     = usePlayerArchetype(playerId);
+  const { data: market }            = usePlayerMarket(playerId);
+  const { data: xgTrend = [] }      = usePlayerXgTrend(playerId);
 
-    fetch(`${API_BASE}/player/${playerId}`)
-      .then(r => r.ok ? r.json() : null).then(setProfile).catch(() => {});
-    fetch(`${API_BASE}/player/${playerId}/competitions`)
-      .then(r => r.ok ? r.json() : []).then(setComps).catch(() => {});
-    fetch(`${API_BASE}/player/${playerId}/archetype`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => d?.archetype && setArchetype(d.archetype)).catch(() => {});
-    fetch(`${API_BASE}/player/${playerId}/market`)
-      .then(r => r.ok ? r.json() : null).then(setMarket).catch(() => {});
-    fetch(`${API_BASE}/player/${playerId}/xg-trend`)
-      .then(r => r.ok ? r.json() : []).then(d => setXgTrend(Array.isArray(d) ? d : [])).catch(() => {});
-  }, [playerId]);
+  const archetype = archetypeData?.archetype ?? null;
+
+  // Oyuncu değiştiğinde filtre sıfırla
+  useEffect(() => { setComp(null); }, [playerId]);
 
   const p90 = profile?.per90;
 
@@ -1324,6 +1139,16 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
                 padding:"0 4px", lineHeight:1,
               }}>
               {isFav(playerId) ? "⭐" : "☆"}
+            </button>
+            <button
+              onClick={() => navigate("/compare", { state: { playerA: { oyuncu_id: playerId, isim: profile?.isim ?? playerName } } })}
+              title="Bu oyuncuyu karşılaştır"
+              style={{
+                background:"rgba(56,189,248,.1)", border:"1px solid rgba(56,189,248,.25)",
+                borderRadius:8, color:"#38bdf8", cursor:"pointer",
+                fontSize:11, fontWeight:700, padding:"4px 10px", whiteSpace:"nowrap",
+              }}>
+              ⚖️ Karşılaştır
             </button>
             {p90 && Object.values(p90).some(v => v > 0) && (
               <PerfPopup playerId={playerId} playerName={profile?.isim ?? playerName} />
@@ -1729,6 +1554,10 @@ export default function App() {
   );
   const [favOpen,    setFavOpen]    = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [recentlyViewed, setRecentlyViewed] = useState(() =>
+    JSON.parse(localStorage.getItem("hh_recent") || "[]")
+  );
+  const searchInputRef = useRef(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -1737,6 +1566,26 @@ export default function App() {
     document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
     localStorage.setItem("hh_dark", dark ? "1" : "0");
   }, [dark]);
+
+  useEffect(() => {
+    const onKey = e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const addRecent = (id, name) => {
+    setRecentlyViewed(prev => {
+      const next = [{ id, name }, ...prev.filter(r => r.id !== id)].slice(0, 5);
+      localStorage.setItem("hh_recent", JSON.stringify(next));
+      return next;
+    });
+  };
 
   const toggleFav = (id, name) => {
     setFavorites(prev => {
@@ -1768,6 +1617,7 @@ export default function App() {
 
   const goPlayer = (id, name) => {
     setPlayerId(id); setPlayerName(name); setPage("player");
+    addRecent(id, name);
     navigate(`/oyuncu/${id}`, { state: { name } });
   };
   const goTeam = ulke => {
@@ -1813,13 +1663,15 @@ export default function App() {
               <NavLink to="/" exact onClick={() => { setPage("teams"); setSelTeam(null); }}>🏠 Takımlar</NavLink>
               <NavLink to="/leaders">🏆 Liderler</NavLink>
               <NavLink to="/compare">⚖️ Karşılaştır</NavLink>
+              <NavLink to="/favoriler">⭐ Favoriler{favorites.length > 0 && ` (${favorites.length})`}</NavLink>
             </div>
 
             {/* Sağ: araçlar */}
             <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
               {/* Arama */}
               <PlayerSearch
-                placeholder="Oyuncu ara…"
+                inputRef={searchInputRef}
+                placeholder="Oyuncu ara… ⌘K"
                 onSelect={(id, name) => { goPlayer(id, name); setMobileMenuOpen(false); }}
               />
 
@@ -1901,20 +1753,24 @@ export default function App() {
               <NavLink to="/" exact onClick={() => { setPage("teams"); setSelTeam(null); setMobileMenuOpen(false); }}>🏠 Takımlar</NavLink>
               <NavLink to="/leaders" onClick={() => setMobileMenuOpen(false)}>🏆 Liderler</NavLink>
               <NavLink to="/compare" onClick={() => setMobileMenuOpen(false)}>⚖️ Karşılaştır</NavLink>
+              <NavLink to="/favoriler" onClick={() => setMobileMenuOpen(false)}>⭐ Favoriler</NavLink>
             </div>
           )}
         </header>
 
         {/* ── İÇERİK ── */}
-        <main className="hh-main" style={S.main}>
+        <main className="hh-main" style={{ ...S.main, paddingBottom: "max(80px, env(safe-area-inset-bottom, 80px))" }}>
           <Routes>
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/leaders" element={
               <LeadersPage onPlayerSelect={(id, name) => goPlayer(id, name)} />
             } />
+            <Route path="/favoriler" element={
+              <FavoritesPage favorites={favorites} onPlayerSelect={goPlayer} onToggle={toggleFav} isFav={isFav} />
+            } />
             <Route path="/*" element={
               <>
-                {page === "teams"  && <TeamsPage onTeamSelect={goTeam} />}
+                {page === "teams"  && <TeamsPage onTeamSelect={goTeam} onPlayerSelect={goPlayer} recentlyViewed={recentlyViewed} />}
                 {page === "team"   && selTeam  && (
                   <TeamPage ulke={selTeam} onPlayerSelect={goPlayer}
                     onBack={() => { setPage("teams"); navigate("/"); }} />
@@ -1931,8 +1787,82 @@ export default function App() {
             } />
           </Routes>
         </main>
+
+        <MobileBottomNav favorites={favorites} />
       </div>
     </>
+  );
+}
+
+// ─── Favoriler sayfası ────────────────────────────────────────────────────────
+function FavoritesPage({ favorites, onPlayerSelect, onToggle, isFav }) {
+  if (favorites.length === 0) return (
+    <div style={{ textAlign:"center", padding:"80px 20px", color:"var(--sub)" }}>
+      <div style={{ fontSize:52, marginBottom:16 }}>⭐</div>
+      <div style={{ fontSize:18, fontWeight:900, color:"var(--text)", marginBottom:8 }}>Favori oyuncu yok</div>
+      <div style={{ fontSize:14 }}>Oyuncu profilindeki yıldıza tıklayarak favorilere ekleyebilirsin.</div>
+    </div>
+  );
+  return (
+    <div>
+      <h2 style={{ fontSize:20, fontWeight:900, marginBottom:20, color:"var(--text)" }}>
+        ⭐ Favori Oyuncular <span style={{ fontSize:14, fontWeight:600, color:"var(--sub)" }}>({favorites.length})</span>
+      </h2>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(230px,1fr))", gap:10 }}>
+        {favorites.map(f => (
+          <button key={f.id} className="hh-player-card"
+            onClick={() => onPlayerSelect(f.id, f.name)}
+            style={{ width:"100%", textAlign:"left", background:"var(--surface)", border:"1px solid var(--border)" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, width:"100%" }}>
+              <PlayerPhotoMini playerId={f.id} name={f.name} size={42} />
+              <div style={{ flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                            fontSize:13, fontWeight:700, color:"var(--text)" }}>
+                {f.name}
+              </div>
+              <button onClick={e => { e.stopPropagation(); onToggle(f.id, f.name); }}
+                style={{ background:"none", border:"none", cursor:"pointer", fontSize:18,
+                         color: isFav(f.id) ? "#f59e0b" : "#94a3b8", padding:0, flexShrink:0 }}>
+                {isFav(f.id) ? "⭐" : "☆"}
+              </button>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Mobil alt navigasyon ─────────────────────────────────────────────────────
+function MobileBottomNav({ favorites }) {
+  const location = useLocation();
+  const tabs = [
+    { to:"/",          label:"Takımlar",   icon:"🏠" },
+    { to:"/leaders",   label:"Liderler",   icon:"🏆" },
+    { to:"/compare",   label:"Karşılaştır",icon:"⚖️" },
+    { to:"/favoriler", label:"Favoriler",  icon:"⭐", badge: favorites.length || 0 },
+  ];
+  return (
+    <nav className="hh-mobile-bottom-nav">
+      {tabs.map(({ to, label, icon, badge }) => {
+        const active = to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+        return (
+          <Link key={to} to={to} className={`hh-mob-tab${active ? " active" : ""}`}>
+            <span className="hh-mob-tab-icon" style={{ position:"relative" }}>
+              {icon}
+              {badge > 0 && (
+                <span style={{
+                  position:"absolute", top:-4, right:-6,
+                  background:"#f59e0b", color:"#0f172a",
+                  borderRadius:"50%", fontSize:8, fontWeight:900,
+                  width:14, height:14, display:"flex", alignItems:"center", justifyContent:"center",
+                }}>{badge}</span>
+              )}
+            </span>
+            <span className="hh-mob-tab-label">{label}</span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 

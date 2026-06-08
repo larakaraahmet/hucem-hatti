@@ -4,10 +4,17 @@ Oyuncu metrik hesaplama modülü.
 yüzdelik dilimler döner. Radar/pizza grafik bu çıktıyı doğrudan tüketir.
 """
 
+from threading import Lock
 from typing import Any
+
 import numpy as np
 import pandas as pd
+from cachetools import TTLCache
 from sqlalchemy import Engine, text
+
+# 5 dakika TTL — farklı min_minutes değerleri için ayrı cache girdisi
+_df_cache: TTLCache = TTLCache(maxsize=8, ttl=300)
+_df_lock = Lock()
 
 # ---------------------------------------------------------------------------
 # SQL: turnuva genelinde tüm oyuncuların ham toplamları
@@ -17,6 +24,7 @@ SELECT
     p.id                          AS oyuncu_id,
     p.isim,
     p.mevki,
+    p.dogum_tarihi,
     COUNT(pms.mac_id)             AS mac_sayisi,
     SUM(pms.dakika)               AS toplam_dakika,
     SUM(pms.gol)                  AS toplam_gol,
@@ -28,7 +36,7 @@ SELECT
     COALESCE(SUM(pms.progressive_pass), 0) AS toplam_prog_pass
 FROM players p
 JOIN player_match_stats pms ON p.id = pms.oyuncu_id
-GROUP BY p.id, p.isim, p.mevki
+GROUP BY p.id, p.isim, p.mevki, p.dogum_tarihi
 HAVING SUM(pms.dakika) >= :min_dakika
 ORDER BY p.id
 """
@@ -160,7 +168,13 @@ def get_all_metrics(engine: Engine, min_minutes: int = 90) -> pd.DataFrame:
     """
     Tüm oyuncuların per-90 metriklerini ve yüzdelik dilimlerini döner.
     Oyuncu karşılaştırma ve benzerlik motoru bu fonksiyonu kullanır.
+    Sonuçlar 5 dakika boyunca önbelleklenir.
     """
+    with _df_lock:
+        cached = _df_cache.get(min_minutes)
+        if cached is not None:
+            return cached
+
     with engine.connect() as conn:
         rows = conn.execute(text(_SQL_ALL_PLAYERS), {"min_dakika": min_minutes})
         df = pd.DataFrame(rows.mappings())
@@ -175,7 +189,10 @@ def get_all_metrics(engine: Engine, min_minutes: int = 90) -> pd.DataFrame:
     ).rename(columns=lambda c: f"{c}_pct")
 
     result = pd.concat(
-        [df[["oyuncu_id", "isim", "mevki", "mac_sayisi", "toplam_dakika"]], per90_df, pct_df],
+        [df[["oyuncu_id", "isim", "mevki", "dogum_tarihi", "mac_sayisi", "toplam_dakika"]], per90_df, pct_df],
         axis=1,
     )
+
+    with _df_lock:
+        _df_cache[min_minutes] = result
     return result

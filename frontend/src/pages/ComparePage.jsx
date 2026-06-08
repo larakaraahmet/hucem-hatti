@@ -2,6 +2,7 @@
  * ComparePage — İki oyuncuyu veya iki takımı yan yana karşılaştır
  */
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { api } from "../services/api.js";
 
 const FLAGS = {
@@ -326,8 +327,9 @@ const COLOR_A = "#38bdf8";
 const COLOR_B = "#f59e0b";
 
 export default function ComparePage() {
-  const [mode,    setMode]    = useState("oyuncu"); // "oyuncu" | "takim"
-  const [playerA, setPlayerA] = useState(null);
+  const location = useLocation();
+  const [mode,    setMode]    = useState("oyuncu");
+  const [playerA, setPlayerA] = useState(location.state?.playerA ?? null);
   const [playerB, setPlayerB] = useState(null);
   const [profileA, setProfileA] = useState(null);
   const [profileB, setProfileB] = useState(null);

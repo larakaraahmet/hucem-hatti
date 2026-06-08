@@ -1,17 +1,22 @@
 """
 Oyuncu benzerlik motoru.
 Metrik vektörlerini standardize edip cosine similarity ile en benzer
-5 oyuncuyu bulur.
+5 oyuncuyu bulur. Yaş yakınlığı da benzerlik skoruna katkıda bulunur.
 """
 
+import datetime
 from typing import Any
+
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import StandardScaler
 from sqlalchemy import Engine
 
 from metrics import get_all_metrics, RADAR_METRICS
+
+# Yaş farkı toleransı: bu değerin üzerindeki yaş farkı skoru düşürür
+_AGE_SIGMA = 4.0  # yıl cinsinden standart sapma
 
 # Benzerlik hesabında kullanılacak sütunlar (per-90 metrikler)
 _FEATURE_COLS: list[str] = [col for col, _ in RADAR_METRICS]
@@ -149,8 +154,28 @@ def find_similar_players(
     similarities = cosine_similarity(target_vec, X_weighted)[0]  # shape: (N,)
 
     # Cosine similarity [-1, 1] → yüzde [0, 100]
-    # Negatif değerler 0'a sabitlenir (zıt profil anlamlı değil)
     sim_pct = np.clip(similarities * 100, 0, 100)
+
+    # Yaş yakınlığı bonusu: hedefle yaş farkı az olan oyuncuları hafifçe yükselt
+    target_dt = df.iloc[target_idx].get("dogum_tarihi")
+    if target_dt is not None:
+        today = datetime.date.today()
+        def _age(dt):
+            if dt is None:
+                return None
+            try:
+                d = dt if isinstance(dt, datetime.date) else datetime.date.fromisoformat(str(dt)[:10])
+                return (today - d).days / 365.25
+            except Exception:
+                return None
+
+        target_age = _age(target_dt)
+        if target_age is not None:
+            ages = df["dogum_tarihi"].map(_age).to_numpy(dtype=float)
+            # Gaussian kernel: e^(-(yaş_farkı/sigma)^2 / 2), max 5 puan bonus
+            age_bonus = 5.0 * np.exp(-((ages - target_age) ** 2) / (2 * _AGE_SIGMA ** 2))
+            age_bonus = np.where(np.isnan(ages), 0, age_bonus)
+            sim_pct = np.clip(sim_pct + age_bonus, 0, 100)
 
     # Kendisini dışarıda bırak, en yüksek N skoru al
     sim_pct[target_idx] = -1
