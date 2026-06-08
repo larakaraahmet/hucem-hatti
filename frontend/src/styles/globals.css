@@ -223,3 +223,12 @@ li[data-dd]:hover    { background: #fef9f0 !important; }
   .hh-main { padding-bottom: 80px !important; }
   .hh-header-nav { display: none !important; }
 }
+
+/* ── PDF / Print ── */
+@media print {
+  header, .hh-mobile-bottom-nav, button, .hh-back-btn { display: none !important; }
+  body { background: #ffffff !important; color: #0f172a !important; }
+  .hh-main { padding: 0 !important; max-width: 100% !important; }
+  .hh-hero-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+  @page { margin: 1.5cm; }
+}

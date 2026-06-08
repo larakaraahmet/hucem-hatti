@@ -6,8 +6,9 @@ import { useEffect, useState, useRef } from "react";
 import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
 import { usePlayerPhoto } from "./hooks/usePlayerPhoto.js";
 import { usePlayer, usePlayerCompetitions, usePlayerArchetype, usePlayerMarket, usePlayerXgTrend, useTeams, useTeamPlayers, useTeamSummary, useStatsLeaders } from "./hooks/useApi.js";
-import ComparePage from "./pages/ComparePage.jsx";
-import LeadersPage from "./pages/LeadersPage.jsx";
+import ComparePage   from "./pages/ComparePage.jsx";
+import LeadersPage   from "./pages/LeadersPage.jsx";
+import SimulatePage  from "./pages/SimulatePage.jsx";
 import RadarChart       from "./components/RadarChart.jsx";
 import PlayerMatches    from "./components/PlayerMatches.jsx";
 import XGTimeline       from "./components/XGTimeline.jsx";
@@ -1112,7 +1113,12 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
 
   return (
     <>
-      <button onClick={onBack} style={S.backBtn}>← Geri</button>
+      <div style={{ display:"flex", gap:8, marginBottom:20 }}>
+        <button onClick={onBack} style={S.backBtn}>← Geri</button>
+        <button onClick={() => window.print()} style={{ ...S.backBtn, marginBottom:0, color:"#64748b" }}>
+          🖨️ PDF
+        </button>
+      </div>
 
       {/* ── Oyuncu hero kartı ── */}
       <div className="hh-hero-card" style={S.heroCard}>
@@ -1662,6 +1668,7 @@ export default function App() {
             <div className="hh-header-nav" style={S.navRow}>
               <NavLink to="/" exact onClick={() => { setPage("teams"); setSelTeam(null); }}>🏠 Takımlar</NavLink>
               <NavLink to="/leaders">🏆 Liderler</NavLink>
+              <NavLink to="/simulate">🎮 Simülatör</NavLink>
               <NavLink to="/compare">⚖️ Karşılaştır</NavLink>
               <NavLink to="/favoriler">⭐ Favoriler{favorites.length > 0 && ` (${favorites.length})`}</NavLink>
             </div>
@@ -1752,6 +1759,7 @@ export default function App() {
             <div className="hh-mobile-menu">
               <NavLink to="/" exact onClick={() => { setPage("teams"); setSelTeam(null); setMobileMenuOpen(false); }}>🏠 Takımlar</NavLink>
               <NavLink to="/leaders" onClick={() => setMobileMenuOpen(false)}>🏆 Liderler</NavLink>
+              <NavLink to="/simulate" onClick={() => setMobileMenuOpen(false)}>🎮 Simülatör</NavLink>
               <NavLink to="/compare" onClick={() => setMobileMenuOpen(false)}>⚖️ Karşılaştır</NavLink>
               <NavLink to="/favoriler" onClick={() => setMobileMenuOpen(false)}>⭐ Favoriler</NavLink>
             </div>
@@ -1761,6 +1769,7 @@ export default function App() {
         {/* ── İÇERİK ── */}
         <main className="hh-main" style={{ ...S.main, paddingBottom: "max(80px, env(safe-area-inset-bottom, 80px))" }}>
           <Routes>
+            <Route path="/simulate" element={<SimulatePage />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/leaders" element={
               <LeadersPage onPlayerSelect={(id, name) => goPlayer(id, name)} />
@@ -1836,10 +1845,10 @@ function FavoritesPage({ favorites, onPlayerSelect, onToggle, isFav }) {
 function MobileBottomNav({ favorites }) {
   const location = useLocation();
   const tabs = [
-    { to:"/",          label:"Takımlar",   icon:"🏠" },
-    { to:"/leaders",   label:"Liderler",   icon:"🏆" },
+    { to:"/",          label:"Takımlar",  icon:"🏠" },
+    { to:"/simulate",  label:"Simülatör", icon:"🎮" },
     { to:"/compare",   label:"Karşılaştır",icon:"⚖️" },
-    { to:"/favoriler", label:"Favoriler",  icon:"⭐", badge: favorites.length || 0 },
+    { to:"/favoriler", label:"Favoriler", icon:"⭐", badge: favorites.length || 0 },
   ];
   return (
     <nav className="hh-mobile-bottom-nav">
@@ -1931,7 +1940,7 @@ const S = {
   acWrap:   { position:"relative", width:"min(400px,92vw)" },
   searchBox: {
     display:"flex", alignItems:"center",
-    background:"#ffffff", border:"1px solid #e2e8f0",
+    background:"var(--surface)", border:"1px solid var(--border)",
     borderRadius:10, overflow:"hidden",
     transition:"border-color .2s, box-shadow .2s",
     boxShadow:"0 1px 3px rgba(0,0,0,.06)",
@@ -1939,29 +1948,29 @@ const S = {
   searchIcon:  { padding:"0 12px", fontSize:14, color:"#94a3b8", flexShrink:0 },
   searchInput: {
     flex:1, background:"transparent", border:"none",
-    color:"#0f172a", fontSize:14, padding:"11px 14px 11px 0",
+    color:"var(--text)", fontSize:14, padding:"11px 14px 11px 0",
     outline:"none",
   },
   dropdown: {
     position:"absolute", top:"calc(100% + 6px)", left:0, right:0,
-    background:"#ffffff", border:"1px solid #e2e8f0",
+    background:"var(--surface)", border:"1px solid var(--border)",
     borderRadius:10, listStyle:"none", padding:"6px 0",
     zIndex:200, maxHeight:290, overflowY:"auto",
     boxShadow:"0 10px 40px rgba(0,0,0,.12)",
   },
   ddItem: { display:"flex", alignItems:"center", gap:8, padding:"9px 16px", cursor:"pointer" },
-  ddName: { color:"#0f172a", fontSize:13, flexGrow:1 },
+  ddName: { color:"var(--text)", fontSize:13, flexGrow:1 },
   ddMeta: {
-    color:"#64748b", fontSize:11,
-    background:"#f1f5f9", borderRadius:4, padding:"1px 7px",
+    color:"var(--sub)", fontSize:11,
+    background:"var(--bg)", borderRadius:4, padding:"1px 7px",
   },
 
   // WC2026 banner
   wcBanner: {
     display:"flex", alignItems:"center", gap:20, flexWrap:"wrap",
     padding:"18px 24px", marginBottom:28,
-    background:"#ffffff",
-    border:"1px solid #e2e8f0",
+    background:"var(--surface)",
+    border:"1px solid var(--border)",
     borderRadius:16, position:"relative", overflow:"hidden",
     boxShadow:"0 1px 3px rgba(0,0,0,.06)",
   },
@@ -1971,8 +1980,8 @@ const S = {
     opacity:.9,
   },
   wcBannerText: { flex:1, display:"flex", flexDirection:"column", gap:4 },
-  wcBannerTitle:{ fontSize:"clamp(18px,3vw,26px)", fontWeight:900, color:"#0f172a", letterSpacing:"-.3px" },
-  wcBannerSub:  { color:"#64748b", fontSize:11, fontWeight:500, letterSpacing:".03em" },
+  wcBannerTitle:{ fontSize:"clamp(18px,3vw,26px)", fontWeight:900, color:"var(--text)", letterSpacing:"-.3px" },
+  wcBannerSub:  { color:"var(--sub)", fontSize:11, fontWeight:500, letterSpacing:".03em" },
   wcBannerBadge:{
     display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
     width:54, height:54, borderRadius:12, flexShrink:0,
@@ -1986,20 +1995,20 @@ const S = {
     gridTemplateColumns:"repeat(auto-fill, minmax(130px, 1fr))",
     gap:10, marginTop:10,
   },
-  teamName:  { color:"#1e293b", fontSize:11, fontWeight:700, textAlign:"center", lineHeight:1.3 },
+  teamName:  { color:"var(--text)", fontSize:11, fontWeight:700, textAlign:"center", lineHeight:1.3 },
   teamCount: { fontSize:9, fontWeight:600 },
 
   // Team page
   teamHeadCard: {
     display:"flex", alignItems:"center", gap:18,
     padding:"20px 24px", marginBottom:24,
-    background:"#ffffff", borderRadius:16,
-    border:"1px solid #e2e8f0",
+    background:"var(--surface)", borderRadius:16,
+    border:"1px solid var(--border)",
     position:"relative", overflow:"hidden",
     boxShadow:"0 1px 4px rgba(0,0,0,.06)",
   },
   backBtn: {
-    background:"#ffffff", border:"1px solid #e2e8f0",
+    background:"var(--surface)", border:"1px solid var(--border)",
     borderRadius:8, color:"#64748b", cursor:"pointer",
     fontSize:13, padding:"7px 16px", marginBottom:20,
     transition:"all .15s",
@@ -2014,7 +2023,7 @@ const S = {
     gridTemplateColumns:"repeat(auto-fill, minmax(220px,1fr))",
     gap:8,
   },
-  playerCardName: { color:"#1e293b", fontSize:13, fontWeight:600 },
+  playerCardName: { color:"var(--text)", fontSize:13, fontWeight:600 },
   playerCardPos:  { fontSize:11 },
   playerCardInner: { display:"flex", alignItems:"center", gap:10, width:"100%" },
 
@@ -2022,8 +2031,8 @@ const S = {
   heroCard: {
     display:"flex", alignItems:"flex-start", gap:22,
     padding:"22px 24px", marginBottom:22, flexWrap:"wrap",
-    background:"#ffffff",
-    border:"1px solid #e2e8f0",
+    background:"var(--surface)",
+    border:"1px solid var(--border)",
     borderRadius:16, position:"relative", overflow:"hidden",
     boxShadow:"0 1px 4px rgba(0,0,0,.06)",
   },
@@ -2039,7 +2048,7 @@ const S = {
     boxShadow:"0 2px 8px rgba(0,0,0,.1)",
   },
   heroNameRow: { display:"flex", alignItems:"center", gap:12, marginBottom:8, justifyContent:"space-between" },
-  heroName: { fontSize:22, fontWeight:900, color:"#0f172a" },
+  heroName: { fontSize:22, fontWeight:900, color:"var(--text)" },
   badgesRow: { display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 },
   badgeGold: {
     background:"#fef3c7", border:"1px solid #fde68a",

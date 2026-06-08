@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db import init_engine, dispose_engine
 from notifications import ntfy
-from routers import auth, fixtures, h2h, players, stats, teams
+from routers import auth, fixtures, h2h, players, simulate, stats, teams
 
 
 @asynccontextmanager
@@ -50,4 +50,5 @@ app.include_router(teams.router)
 app.include_router(stats.router)
 app.include_router(fixtures.router)
 app.include_router(h2h.router)
+app.include_router(simulate.router)
 app.include_router(auth.router)
