@@ -63,6 +63,100 @@ function GoalList({ goals, color }) {
   );
 }
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
+// ─── İlk kez karşılaşma paneli — AI yorum ile ──────────────────────────────
+function NoH2HPanel({ takim1, takim2, takim1Tr, takim2Tr }) {
+  const [yorum,   setYorum]   = useState(null);
+  const [loading, setLoading] = useState(false);
+  const t1 = takim1Tr || takim1;
+  const t2 = takim2Tr || takim2;
+
+  function fetchYorum() {
+    setLoading(true);
+    const params = new URLSearchParams({
+      takim1, takim2,
+      takim1Tr: takim1Tr || "",
+      takim2Tr: takim2Tr || "",
+      ilk_kez: "true",
+    });
+    fetch(`${API_BASE}/h2h/commentary?${params}`)
+      .then(r => r.ok ? r.json() : { yorum: "Yorum alınamadı." })
+      .then(d => { setYorum(d.yorum); setLoading(false); })
+      .catch(() => { setYorum("Yorum alınamadı."); setLoading(false); });
+  }
+
+  return (
+    <div style={card}>
+      {/* Başlık */}
+      <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:10 }}>
+        <span style={{ fontSize:14 }}>⚔️</span>
+        <span style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>İlk Karşılaşma</span>
+      </div>
+
+      {/* Takımlar */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:12, marginBottom:12 }}>
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontSize:22 }}>{flag(takim1)}</div>
+          <div style={{ fontSize:11, fontWeight:700, color:"#0f172a", marginTop:2 }}>{t1}</div>
+        </div>
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontSize:10, color:"#94a3b8", fontWeight:600 }}>WC/EURO'DA</div>
+          <div style={{ fontSize:18, fontWeight:900, color:"#e2e8f0", letterSpacing:2 }}>🆚</div>
+          <div style={{ fontSize:10, color:"#94a3b8", fontWeight:600 }}>İLK KEZ</div>
+        </div>
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontSize:22 }}>{flag(takim2)}</div>
+          <div style={{ fontSize:11, fontWeight:700, color:"#0f172a", marginTop:2 }}>{t2}</div>
+        </div>
+      </div>
+
+      {/* AI yorum alanı */}
+      {!yorum && !loading && (
+        <button
+          onClick={fetchYorum}
+          style={{
+            width:"100%", padding:"8px 12px",
+            background:"linear-gradient(135deg,#1e293b,#334155)",
+            border:"none", borderRadius:8, cursor:"pointer",
+            fontSize:11, fontWeight:700, color:"#fff",
+            display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+          }}
+        >
+          <span style={{ fontSize:13 }}>✨</span>
+          AI Maç Analizi
+        </button>
+      )}
+
+      {loading && (
+        <div style={{
+          textAlign:"center", padding:"12px 0",
+          fontSize:11, color:"#94a3b8",
+        }}>
+          <span style={{ animation:"hh-pulse 1s ease-in-out infinite alternate" }}>✨</span>
+          {" "}Analiz hazırlanıyor…
+        </div>
+      )}
+
+      {yorum && (
+        <div style={{
+          marginTop:4, padding:"12px 14px",
+          background:"linear-gradient(135deg,#f8fafc,#f1f5f9)",
+          border:"1px solid #e2e8f0",
+          borderLeft:"3px solid #f59e0b",
+          borderRadius:8, fontSize:12, color:"#1e293b",
+          lineHeight:1.65,
+        }}>
+          <div style={{ fontSize:9, fontWeight:700, color:"#f59e0b", marginBottom:6, textTransform:"uppercase", letterSpacing:".07em" }}>
+            ✨ AI Analiz
+          </div>
+          {yorum}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function H2HPanel({ takim1, takim2, takim1Tr, takim2Tr }) {
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
@@ -82,11 +176,10 @@ export default function H2HPanel({ takim1, takim2, takim1Tr, takim2Tr }) {
     </div>
   );
   if (!data || data.toplam_mac === 0) return (
-    <div style={card}>
-      <div style={{ fontSize:11, color:"#94a3b8", padding:"4px 0" }}>
-        ⚔️ Bu iki takım WC / EURO'da hiç karşılaşmamış.
-      </div>
-    </div>
+    <NoH2HPanel
+      takim1={takim1} takim2={takim2}
+      takim1Tr={takim1Tr} takim2Tr={takim2Tr}
+    />
   );
 
   const t1Tr = takim1Tr || takim1;

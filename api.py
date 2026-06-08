@@ -230,24 +230,22 @@ class PlayerSummary(BaseModel):
 # ---------------------------------------------------------------------------
 
 _SQL_PLAYER_BASE = """
-SELECT id, isim, mevki, dogum_tarihi::text, milliyet
+SELECT id, isim, mevki, dogum_tarihi::text, milliyet, current_club, current_club_ulke
 FROM players
 WHERE id = :player_id
 """
 
 _SQL_CLUB_TEAM = """
-SELECT t.isim AS takim, m.turnuva AS lig, COUNT(*) AS cnt
-FROM player_match_stats pms
-JOIN matches m ON m.id = pms.mac_id
-JOIN teams t ON (t.id = m.ev_takim_id OR t.id = m.deplasman_takim_id)
-WHERE pms.oyuncu_id = :player_id
-  AND m.turnuva NOT ILIKE '%World Cup%'
-  AND m.turnuva NOT ILIKE '%Euro%'
-  AND m.turnuva NOT ILIKE '%Copa América%'
-  AND m.turnuva NOT ILIKE '%African%'
-  AND m.turnuva NOT ILIKE '%Nations League%'
-GROUP BY t.isim, m.turnuva
-ORDER BY cnt DESC
+SELECT takim, lig
+FROM player_external_stats
+WHERE oyuncu_id = :player_id
+  AND takim IS NOT NULL
+ORDER BY
+    CASE WHEN sezon = '2025/26' THEN 0
+         WHEN sezon = '2024/25' THEN 1
+         WHEN sezon = '2023/24' THEN 2
+         ELSE 3 END,
+    COALESCE(mac_sayisi, 0) DESC
 LIMIT 1
 """
 
@@ -308,14 +306,19 @@ def get_player_profile(player_id: int, engine: Engine = Depends(get_engine)):
         detay = " | ".join(filter(None, [mevki, milliyet]))
         _ntfy(f"👤 {isim}", detay if detay else "Oyuncu profili açıldı")
 
-    # Kulüp takımı ve ligi bul
+    # Kulüp takımı ve ligi bul — önce player_external_stats, fallback current_club
     club_takim = club_lig = None
     with engine.connect() as conn:
         club_row = conn.execute(text(_SQL_CLUB_TEAM), {"player_id": player_id}).mappings().fetchone()
     if club_row:
         club_takim = club_row["takim"]
-        # Turnuva adından yıl kısmını at  (ör. "Ligue 1 2022/23" → "Ligue 1")
-        club_lig = " ".join(club_row["lig"].split()[:2]) if club_row["lig"] else None
+        raw_lig = club_row["lig"] or ""
+        # "Ligue 1 2025/26" → "Ligue 1"
+        club_lig = " ".join(w for w in raw_lig.split() if not w.startswith("20")) or raw_lig or None
+    # Fallback: players.current_club (ingest tarafından doldurulur)
+    if not club_takim and base.get("current_club"):
+        club_takim = base["current_club"]
+        club_lig   = base.get("current_club_ulke")
 
     return PlayerProfileResponse(
         oyuncu_id     = player_id,
@@ -1244,8 +1247,54 @@ def get_player_insight(
 
 
 # ---------------------------------------------------------------------------
-# H2H — İki takım arasındaki Dünya Kupası geçmişi
+# H2H — İki takım arasındaki Dünya Kupası geçmişi + AI Yorum
 # ---------------------------------------------------------------------------
+
+@app.get("/h2h/commentary", summary="İki takım için AI maç yorumu (özellikle hiç karşılaşmamış takımlar)")
+def h2h_commentary(
+    takim1: str = Query(..., description="1. takım (İngilizce, ör. 'Japan')"),
+    takim2: str = Query(..., description="2. takım (İngilizce, ör. 'Morocco')"),
+    takim1Tr: str = Query("", description="1. takım Türkçe adı"),
+    takim2Tr: str = Query("", description="2. takım Türkçe adı"),
+    ilk_kez: bool = Query(True, description="İlk kez karşılaşıyorlar mı?"),
+):
+    """
+    İki millî takım için Türkçe AI maç yorumu üretir.
+    H2H geçmişi olmayan takımlar için özellikle kullanılır.
+    """
+    import os, anthropic as _ant
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        return {"yorum": "AI yorum şu an aktif değil."}
+
+    t1 = takim1Tr or takim1
+    t2 = takim2Tr or takim2
+
+    if ilk_kez:
+        context = f"{t1} ve {t2} bu turnuvada ilk kez karşı karşıya geliyor — aralarında WC/Euro geçmişi yok."
+    else:
+        context = f"{t1} ile {t2} daha önce çok az karşılaşmış."
+
+    prompt = (
+        f"{context}\n\n"
+        f"2026 FIFA Dünya Kupası bağlamında bu iki millî takımı kısaca analiz et. "
+        f"Her takımın genel oyun tarzını, güçlü yönlerini, öne çıkan oyuncularını ve "
+        f"bu karşılaşmada belirleyici olabilecek faktörleri Türkçe, samimi ve "
+        f"net bir dille 3-4 cümleyle açıkla. Rakam veya istatistik uydurmadan, "
+        f"genel futbol bilgisine dayanan bir yorum yap."
+    )
+
+    try:
+        client = _ant.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model="claude-haiku-4-5",
+            max_tokens=350,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        yorum = msg.content[0].text.strip()
+        return {"yorum": yorum}
+    except Exception as e:
+        return {"yorum": f"Yorum üretilemedi: {str(e)[:80]}"}
 
 @app.get("/h2h", summary="İki takım arasındaki WC geçmişi (H2H)")
 def head_to_head(
