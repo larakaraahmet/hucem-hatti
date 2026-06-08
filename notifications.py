@@ -20,12 +20,13 @@ def ntfy(baslik: str, mesaj: str) -> None:
         return
     try:
         payload = mesaj.encode("utf-8")
+        safe_title = baslik.encode("ascii", errors="ignore").decode("ascii")
         req = urllib.request.Request(
             f"https://ntfy.sh/{_NTFY_TOPIC}",
             data=payload,
             headers={
                 "Content-Type": "text/plain; charset=utf-8",
-                "Title": urllib.parse.quote(baslik, safe=""),
+                "Title": safe_title,
             },
             method="POST",
         )
@@ -41,16 +42,14 @@ def notify_player_view(player_id: int, isim: str, mevki: str | None, milliyet: s
     if now - player_notifs.get(player_id, 0) > 60:
         player_notifs[player_id] = now
         detay = " | ".join(filter(None, [mevki, milliyet]))
-        ntfy(f"👤 {isim}", detay if detay else "Oyuncu profili açıldı")
+        ntfy(f":( {isim}", detay if detay else "profil acildi")
 
 
 def notify_search(q: str) -> None:
-    """Aynı sorgu tekrar bildirilmez — deduplication ile arama bildirir."""
     if q and q.lower() != "ping" and q != _state["last_notif_search"]:
         _state["last_notif_search"] = q
-        ntfy("🔍 Arama yapıldı", f'"{q}" arandı')
+        ntfy(":( arama", f'"{q}"')
 
 
 def notify_visit() -> None:
-    """Site ziyaretini bildirir."""
-    ntfy("Ziyaretci!", "Biri siteye girdi")
+    ntfy(":( ziyaret", "biri girdi")

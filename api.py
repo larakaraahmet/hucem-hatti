@@ -17,7 +17,7 @@ from routers import auth, fixtures, h2h, players, stats, teams
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_engine()
-    ntfy("⚽ Hücem Hattı açıldı", "API sunucusu başlatıldı.")
+    ntfy(":( api acildi", "sunucu basladi")
     yield
     dispose_engine()
 
