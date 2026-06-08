@@ -1275,6 +1275,26 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
 
   const p90 = profile?.per90;
 
+  // Loading skeleton
+  if (!profile) return (
+    <>
+      <button onClick={onBack} style={S.backBtn}>← Geri</button>
+      <div style={{
+        ...S.heroCard,
+        animation: "hh-shimmer 1.4s linear infinite",
+        background: "linear-gradient(90deg, var(--surface) 25%, var(--border) 50%, var(--surface) 75%)",
+        backgroundSize: "600% 100%",
+      }}>
+        <div style={{ width:96, height:96, borderRadius:"50%", background:"var(--border)", flexShrink:0 }} />
+        <div style={{ flex:1, display:"flex", flexDirection:"column", gap:10 }}>
+          <div style={{ height:24, width:"50%", borderRadius:8, background:"var(--border)" }} />
+          <div style={{ height:16, width:"70%", borderRadius:6, background:"var(--border)" }} />
+          <div style={{ height:14, width:"40%", borderRadius:6, background:"var(--border)" }} />
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <>
       <button onClick={onBack} style={S.backBtn}>← Geri</button>
