@@ -108,12 +108,30 @@ def name_score(n1: str, n2: str) -> float:
         return 0.9
     return jaccard
 
-def best_match(api_name: str, db_players: list[dict], threshold: float = 0.5) -> Optional[dict]:
+def best_match(
+    api_name: str,
+    db_players: list[dict],
+    threshold: float = 0.5,
+    lig_filtre: Optional[str] = None,
+) -> Optional[dict]:
+    """
+    api_name'i db_players içinde isim benzerliğiyle eşleştirir.
+    lig_filtre verilirse, bilinen ligi farklı olan oyuncular yüksek eşik
+    (0.95) gerektirir — farklı liglerdeki aynı isimli oyuncuların
+    karışmasını önler.
+    """
     best_s, best_p = 0.0, None
     for p in db_players:
         s = name_score(api_name, p["isim"])
-        if s > best_s:
+        # Farklı ligdeyse çok yüksek eşik iste
+        if lig_filtre and p.get("bilinen_lig") and p["bilinen_lig"] != lig_filtre:
+            efektif_esik = 0.95
+        else:
+            efektif_esik = threshold
+        if s > best_s and s >= efektif_esik:
             best_s, best_p = s, p
+    if best_p is None:
+        return None
     return {"player": best_p, "score": best_s} if best_s >= threshold else None
 
 
@@ -121,9 +139,15 @@ def best_match(api_name: str, db_players: list[dict], threshold: float = 0.5) ->
 
 def load_db_players(engine) -> list[dict]:
     with engine.connect() as conn:
-        rows = conn.execute(
-            text("SELECT id, isim, milliyet FROM players ORDER BY isim")
-        ).mappings().fetchall()
+        rows = conn.execute(text("""
+            SELECT p.id, p.isim, p.milliyet,
+                   (SELECT ext.lig FROM player_external_stats ext
+                    WHERE ext.oyuncu_id = p.id AND ext.sezon = '2025/26'
+                    ORDER BY COALESCE(ext.mac_sayisi,0) DESC LIMIT 1
+                   ) AS bilinen_lig
+            FROM players p
+            ORDER BY p.isim
+        """)).mappings().fetchall()
     return [dict(r) for r in rows]
 
 def get_or_create_team(conn, team_name: str, ulke: str = "") -> Optional[int]:
@@ -183,7 +207,7 @@ def ingest_season_stats(
                 api_name = str(row.get("player", ""))
                 team     = str(row.get("team", ""))
 
-                match = best_match(api_name, db_players)
+                match = best_match(api_name, db_players, lig_filtre=lig_tr)
                 if not match:
                     stats["eslesmedi"] += 1
                     unmatched.append(f"{api_name} ({lig_tr})")
@@ -355,7 +379,7 @@ def ingest_shots(
                     stats["atildi"] += 1
                     continue
 
-                match = best_match(player_name, db_players, threshold=0.40)
+                match = best_match(player_name, db_players, threshold=0.40, lig_filtre=lig_tr)
                 if not match:
                     stats["atildi"] += 1
                     continue
