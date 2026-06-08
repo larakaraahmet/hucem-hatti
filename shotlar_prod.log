@@ -1,0 +1,189 @@
+2026-06-06 18:47:50,229 [INFO]   DB'de 2988 oyuncu yüklendi.
+2026-06-06 18:47:50,230 [INFO] 
+  ── Premier League 2025/2026 ──
+[06/06/26 18:47:50] INFO     No custom team name replacements      _config.py:92
+                             found. You can configure these in                  
+                             /Users/lara/soccerdata/config/teamnam              
+                             e_replacements.json.                               
+                    INFO     No custom league dict found. You can _config.py:190
+                             configure additional leagues in                    
+                             /Users/lara/soccerdata/config/league               
+                             _dict.json.                                        
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[2026-06-06 18:47:50] INFO     TLSLibrary:_load_library:397 - Successfully loaded TLS library: /opt/anaconda3/lib/python3.13/site-packages/tls_requests/bin/tls-client-darwin-arm64-1.13.1.dylib
+                    INFO     Successfully loaded TLS library:   libraries.py:397
+                             /opt/anaconda3/lib/python3.13/site                 
+                             -packages/tls_requests/bin/tls-cli                 
+                             ent-darwin-arm64-1.13.1.dylib                      
+[06/06/26 18:47:51] INFO       537 oyuncu çekildi.       ingest_understat.py:179
+[06/06/26 18:49:14] INFO                                 ingest_understat.py:173
+                               ── La Liga 2025/2026 ──                          
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[06/06/26 18:49:15] INFO       600 oyuncu çekildi.       ingest_understat.py:179
+[06/06/26 18:50:08] INFO                                 ingest_understat.py:173
+                               ── Bundesliga 2025/2026                          
+                             ──                                                 
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[06/06/26 18:50:09] INFO       499 oyuncu çekildi.       ingest_understat.py:179
+[06/06/26 18:51:01] INFO                                 ingest_understat.py:173
+                               ── Ligue 1 2025/2026 ──                          
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+                    INFO       553 oyuncu çekildi.       ingest_understat.py:179
+[06/06/26 18:51:48] INFO                                 ingest_understat.py:173
+                               ── Serie A 2025/2026 ──                          
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[06/06/26 18:51:49] INFO       586 oyuncu çekildi.       ingest_understat.py:179
+[06/06/26 18:52:48] INFO                                 ingest_understat.py:251
+                               ── Sezon İstatistik Özeti                        
+                             ──                                                 
+                    INFO       İşlendi    : 2775         ingest_understat.py:252
+                    INFO       Eşleşti    : 841          ingest_understat.py:253
+                    INFO       Güncellendi: 841          ingest_understat.py:254
+                    INFO       Eşleşmedi  : 1934         ingest_understat.py:255
+                    INFO       Eşleşmeyenler (ilk 10):   ingest_understat.py:257
+                             ['Cristhian Mosquera                               
+                             (Premier League)', 'Ethan                          
+                             Nwaneri (Premier League)',                         
+                             'Max Dowman (Premier                               
+                             League)', 'Myles                                   
+                             Lewis-Skelly (Premier                              
+                             League)', 'Alysson Edward                          
+                             (Premier League)', 'Andrés                         
+                             García (Premier League)',                          
+                             'Boubacar Kamara (Premier                          
+                             League)', 'Bradley Burrowes                        
+                             (Premier League)',                                 
+                             'Emiliano Buendía (Premier                         
+                             League)', 'George Hemmings                         
+                             (Premier League)']                                 
+                    INFO                                 ingest_understat.py:511
+                               Şut koordinatları                                
+                             yükleniyor…                                        
+[06/06/26 18:52:49] INFO                                 ingest_understat.py:315
+                               ── Premier League 2025                           
+                             şutlar ──                                          
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[06/06/26 18:52:50] INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+                    INFO       380 maç için şut          ingest_understat.py:289
+                             çekiliyor…                                         
+                    INFO       9524 şut çekildi.         ingest_understat.py:340
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 942, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/lara/hucem_hatti/ingest_understat.py", line 519, in <module>
+    main()
+    ~~~~^^
+  File "/Users/lara/hucem_hatti/ingest_understat.py", line 512, in main
+    ingest_shots(engine, ligler, sezonlar,
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 limit_mac=args.limit_mac,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+                 dry_run=args.dry_run,
+                 ^^^^^^^^^^^^^^^^^^^^^
+                 no_store=no_store)
+                 ^^^^^^^^^^^^^^^^^^
+  File "/Users/lara/hucem_hatti/ingest_understat.py", line 389, in ingest_shots
+    home_id = get_or_create_team(conn, home_team, lig_tr)
+  File "/Users/lara/hucem_hatti/ingest_understat.py", line 131, in get_or_create_team
+    nr = conn.execute(text("""
+         ~~~~~~~~~~~~^^^^^^^^^
+        INSERT INTO teams (isim, ulke) VALUES (:n, :u)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ON CONFLICT (isim) DO UPDATE SET ulke = EXCLUDED.ulke
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        RETURNING id
+        ^^^^^^^^^^^^
+    """), {"n": team_name, "u": ulke}).fetchone()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 942, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+[SQL: 
+        INSERT INTO teams (isim, ulke) VALUES (%(n)s, %(u)s)
+        ON CONFLICT (isim) DO UPDATE SET ulke = EXCLUDED.ulke
+        RETURNING id
+    ]
+[parameters: {'n': 'Manchester City', 'u': 'Premier League'}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)

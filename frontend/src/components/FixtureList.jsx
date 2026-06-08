@@ -8,6 +8,117 @@ import { useEffect, useState, useRef } from "react";
 import { api } from "../services/api.js";
 import H2HPanel from "./H2HPanel.jsx";
 
+// ─── Stadyum mini kartı (fikstür satırı genişlediğinde) ────────────────────
+function VenuePanel({ f }) {
+  if (!f.stadyum_isim) return (
+    <div style={{ padding: "10px 14px", color: "#94a3b8", fontSize: 11 }}>
+      🏟️ Stadyum bilgisi henüz mevcut değil.
+    </div>
+  );
+
+  const rakim = f.stadyum_rakim;
+  const altColor = rakim >= 2000 ? "#dc2626" : rakim >= 1000 ? "#ea580c" : rakim >= 400 ? "#f59e0b" : "#10b981";
+  const altLabel = rakim >= 2000 ? "⚡ EKSTrem" : rakim >= 1000 ? "🏔️ Yüksek" : rakim >= 400 ? "⛰️ Orta" : "🌊 Deniz seviyesi";
+  const irtifaOxygen = rakim ? Math.max(0, 100 - Math.round(rakim / 1000 * 10)) : null;
+
+  return (
+    <div style={{ padding: "10px 14px 14px" }}>
+      {/* Stadyum başlık */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <span style={{ fontSize: 18 }}>🏟️</span>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>{f.stadyum_isim}</div>
+          <div style={{ fontSize: 10, color: "#64748b" }}>
+            📍 {f.stadyum_sehir} · {f.stadyum_ulke}
+          </div>
+        </div>
+      </div>
+
+      {/* Metrikler grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 10 }}>
+        {/* Kapasite */}
+        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", marginBottom: 2 }}>Kapasite</div>
+          <div style={{ fontSize: 14, fontWeight: 900, color: "#0f172a" }}>
+            {f.stadyum_kapasite ? f.stadyum_kapasite.toLocaleString("tr-TR") : "—"}
+          </div>
+          <div style={{ height: 3, background: "#f1f5f9", borderRadius: 2, marginTop: 4, overflow: "hidden" }}>
+            <div style={{ width: `${Math.min(100,(f.stadyum_kapasite/92000)*100)}%`, height: "100%", background: "#3b82f6", borderRadius: 2 }} />
+          </div>
+        </div>
+
+        {/* Rakım */}
+        <div style={{ background: rakim >= 1000 ? "#fff7ed" : "#f8fafc", border: `1px solid ${rakim >= 1000 ? "#fed7aa" : "#e2e8f0"}`, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", marginBottom: 2 }}>Rakım</div>
+          <div style={{ fontSize: 14, fontWeight: 900, color: altColor }}>
+            {rakim != null ? `${rakim} m` : "—"}
+          </div>
+          <div style={{ fontSize: 9, color: altColor, fontWeight: 700 }}>{altLabel}</div>
+        </div>
+
+        {/* Zemin */}
+        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", marginBottom: 2 }}>Zemin</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>
+            {f.stadyum_cim_turu === "Doğal" ? "🌿" : f.stadyum_cim_turu === "Yapay" ? "🟩" : "🍀"}
+          </div>
+          <div style={{ fontSize: 10, color: "#475569", fontWeight: 600 }}>{f.stadyum_cim_turu ?? "—"}</div>
+        </div>
+      </div>
+
+      {/* İkinci satır: boyut + çerçeve + kuruluş */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: rakim >= 1000 ? 10 : 0 }}>
+        {f.stadyum_cerceve && (
+          <span style={chip}>{f.stadyum_cerceve === "Açık" ? "☀️" : "🏛️"} {f.stadyum_cerceve}</span>
+        )}
+        {f.stadyum_boyut && (
+          <span style={chip}>📐 {f.stadyum_boyut}</span>
+        )}
+        {f.stadyum_acilis_yili && (
+          <span style={chip}>🏗️ {f.stadyum_acilis_yili}</span>
+        )}
+        {irtifaOxygen !== null && rakim >= 500 && (
+          <span style={{ ...chip, background: "#fff7ed", color: "#ea580c", borderColor: "#fed7aa" }}>
+            💨 Oksijen ~{irtifaOxygen}%
+          </span>
+        )}
+      </div>
+
+      {/* Yüksek irtifa uyarı */}
+      {rakim >= 1000 && (
+        <div style={{
+          padding: "8px 10px",
+          background: "#fff7ed", border: "1px solid #fed7aa",
+          borderRadius: 8, fontSize: 11, color: "#92400e", lineHeight: 1.5,
+        }}>
+          {rakim >= 2000
+            ? "⚡ Ekstrem irtifa! Oksijen yaklaşık %22 daha az. İrtifaya alışık olmayan takımlar büyük dezavantajla karşılaşır."
+            : "⛰️ Yüksek irtifa etkisi var. İrtifaya adapte millî takımlar avantajlı olabilir."}
+        </div>
+      )}
+
+      {/* Harita linki */}
+      {f.stadyum_lat && f.stadyum_lon && (
+        <a
+          href={`https://www.google.com/maps?q=${f.stadyum_lat},${f.stadyum_lon}`}
+          target="_blank" rel="noopener noreferrer"
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 4,
+            marginTop: 8, fontSize: 10, color: "#38bdf8", textDecoration: "none", fontWeight: 600,
+          }}
+        >🗺️ Haritada gör →</a>
+      )}
+    </div>
+  );
+}
+
+const chip = {
+  display: "inline-flex", alignItems: "center", gap: 3,
+  fontSize: 9, fontWeight: 600, padding: "2px 8px", borderRadius: 5,
+  background: "#f1f5f9", color: "#475569",
+  border: "1px solid #e2e8f0",
+};
+
 const GRP_COLOR = {
   A:"#f97316", B:"#38bdf8", C:"#10b981", D:"#a78bfa",
   E:"#f59e0b", F:"#ef4444", G:"#06b6d4", H:"#84cc16",
@@ -107,11 +218,12 @@ function countdownStr(tarih_utc, now) {
 }
 
 export default function FixtureList({ onTeamClick }) {
-  const [fixtures, setFixtures] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [grupFilter, setGrp]    = useState(null);
-  const [showAll,  setShowAll]  = useState(false);
-  const [openH2H,  setOpenH2H] = useState(null);
+  const [fixtures,   setFixtures]   = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [grupFilter, setGrp]        = useState(null);
+  const [showAll,    setShowAll]    = useState(false);
+  const [openH2H,    setOpenH2H]   = useState(null);
+  const [openVenue,  setOpenVenue]  = useState(null); // fixture id
   const now = useCountdown();
 
   useEffect(() => {
@@ -197,9 +309,10 @@ export default function FixtureList({ onTeamClick }) {
               const time    = (f.tarih_tr || "").split(" ")[1] ?? "";
               const played  = f.durum && f.durum !== "programlı" && f.durum !== "TIMED";
               const cdStr   = !played ? countdownStr(f.tarih_utc, now) : null;
-              const h2hKey  = `${f.ev_takim}|${f.dep_takim}`;
-              const h2hOpen = openH2H === h2hKey;
-              const isLive  = !played && cdStr === null && f.tarih_utc;
+              const h2hKey    = `${f.ev_takim}|${f.dep_takim}`;
+              const h2hOpen   = openH2H === h2hKey;
+              const venueOpen = openVenue === f.id;
+              const isLive    = !played && cdStr === null && f.tarih_utc;
 
               return (
                 <div key={f.id}>
@@ -284,23 +397,47 @@ export default function FixtureList({ onTeamClick }) {
                       </span>
                     </div>
 
-                    {/* Şehir + H2H */}
+                    {/* Stadyum + H2H ikonları */}
                     <div style={{ display:"flex", alignItems:"center", gap:4, flexShrink:0 }}>
-                      {f.stadyum_sehir && (
-                        <span className="hh-fixture-stadium" style={{
-                          fontSize:9, color:"#94a3b8", maxWidth:72,
-                          overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-                          display:"none",
-                        }}>📍{f.stadyum_sehir}</span>
-                      )}
+                      {/* Stadyum ikonu */}
                       <span
-                        onClick={() => setOpenH2H(h2hOpen ? null : h2hKey)}
+                        onClick={() => {
+                          setOpenVenue(venueOpen ? null : f.id);
+                          if (!venueOpen) setOpenH2H(null);
+                        }}
+                        style={{
+                          fontSize: 13,
+                          cursor: "pointer",
+                          opacity: f.stadyum_isim ? 1 : 0.3,
+                          filter: venueOpen ? "none" : "grayscale(60%)",
+                          title: "Stadyum detayı",
+                        }}
+                        title="Stadyum detayı"
+                      >🏟️</span>
+                      {/* H2H */}
+                      <span
+                        onClick={() => {
+                          setOpenH2H(h2hOpen ? null : h2hKey);
+                          if (!h2hOpen) setOpenVenue(null);
+                        }}
                         style={{ fontSize:10, color: h2hOpen ? "#d97706" : "#cbd5e1", cursor:"pointer" }}
                         title="H2H geçmiş"
                       >⚔️</span>
                     </div>
                   </div>
 
+                  {/* Venue paneli */}
+                  {venueOpen && (
+                    <div style={{
+                      background: "#fff8f0",
+                      borderBottom: i < matches.length - 1 ? "1px solid #f1f5f9" : "none",
+                      borderTop: "1px solid #fed7aa",
+                    }}>
+                      <VenuePanel f={f} />
+                    </div>
+                  )}
+
+                  {/* H2H paneli */}
                   {h2hOpen && (
                     <div style={{
                       padding:"12px 14px 14px",

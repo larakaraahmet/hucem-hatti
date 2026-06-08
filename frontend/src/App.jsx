@@ -29,6 +29,7 @@ import Yardimetre         from "./components/Yardimetre.jsx";
 import GroupFixtures      from "./components/GroupFixtures.jsx";
 import Bracket            from "./components/Bracket.jsx";
 import WCPrediction       from "./components/WCPrediction.jsx";
+import WC2026Venues       from "./components/WC2026Venues.jsx";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -887,6 +888,7 @@ function TeamsPage({ onTeamSelect }) {
       }}>
         {[
           { key:"maclar",    label:"📅 Maçlar",              desc:"WC 2026 fikstür & sonuçlar" },
+          { key:"sahalar",   label:"🏟️ Sahalar",             desc:"16 stadyum · irtifa · zemin analizi" },
           { key:"oyuncular", label:"👤 Takımlar & Oyuncular",desc:"Kadro ve oyuncu analizi" },
           { key:"gruplar",   label:"🗂️ Gruplar",             desc:"Grup fikstürü ve sonuçlar" },
           { key:"eleme",     label:"🏆 Eleme",               desc:"Knockout bracket" },
@@ -904,9 +906,10 @@ function TeamsPage({ onTeamSelect }) {
       </div>
 
       {/* ── İçerik ── */}
-      {tab === "maclar"  && <FixtureList onTeamClick={onTeamSelect} />}
-      {tab === "gruplar" && <GroupFixtures onTeamClick={onTeamSelect} />}
-      {tab === "eleme"   && <Bracket />}
+      {tab === "maclar"   && <FixtureList onTeamClick={onTeamSelect} />}
+      {tab === "sahalar"  && <WC2026Venues />}
+      {tab === "gruplar"  && <GroupFixtures onTeamClick={onTeamSelect} />}
+      {tab === "eleme"    && <Bracket />}
 
       {tab === "oyuncular" && <>
       {/* Konfederasyon grupları */}

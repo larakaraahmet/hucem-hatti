@@ -1,0 +1,132 @@
+2026-06-06 18:12:24,074 [INFO]   DB'de 3362 oyuncu yüklendi.
+2026-06-06 18:12:24,074 [INFO] 
+  ── Premier League 2025/2026 ──
+[06/06/26 18:12:24] INFO     No custom team name replacements      _config.py:92
+                             found. You can configure these in                  
+                             /Users/lara/soccerdata/config/teamnam              
+                             e_replacements.json.                               
+                    INFO     No custom league dict found. You can _config.py:190
+                             configure additional leagues in                    
+                             /Users/lara/soccerdata/config/league               
+                             _dict.json.                                        
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[2026-06-06 18:12:24] INFO     TLSLibrary:_load_library:397 - Successfully loaded TLS library: /opt/anaconda3/lib/python3.13/site-packages/tls_requests/bin/tls-client-darwin-arm64-1.13.1.dylib
+                    INFO     Successfully loaded TLS library:   libraries.py:397
+                             /opt/anaconda3/lib/python3.13/site                 
+                             -packages/tls_requests/bin/tls-cli                 
+                             ent-darwin-arm64-1.13.1.dylib                      
+                    INFO       537 oyuncu çekildi.       ingest_understat.py:179
+[06/06/26 18:12:36] INFO                                 ingest_understat.py:173
+                               ── La Liga 2025/2026 ──                          
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[06/06/26 18:12:37] INFO       600 oyuncu çekildi.       ingest_understat.py:179
+[06/06/26 18:12:50] INFO                                 ingest_understat.py:173
+                               ── Bundesliga 2025/2026                          
+                             ──                                                 
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+                    INFO       499 oyuncu çekildi.       ingest_understat.py:179
+[06/06/26 18:13:02] INFO                                 ingest_understat.py:173
+                               ── Ligue 1 2025/2026 ──                          
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+                    INFO       553 oyuncu çekildi.       ingest_understat.py:179
+[06/06/26 18:13:14] INFO                                 ingest_understat.py:173
+                               ── Serie A 2025/2026 ──                          
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+                    INFO       586 oyuncu çekildi.       ingest_understat.py:179
+[06/06/26 18:13:27] INFO                                 ingest_understat.py:251
+                               ── Sezon İstatistik Özeti                        
+                             ──                                                 
+                    INFO       İşlendi    : 2775         ingest_understat.py:252
+                    INFO       Eşleşti    : 1016         ingest_understat.py:253
+                    INFO       Güncellendi: 1016         ingest_understat.py:254
+                    INFO       Eşleşmedi  : 1759         ingest_understat.py:255
+                    INFO       Eşleşmeyenler (ilk 10):   ingest_understat.py:257
+                             ['Cristhian Mosquera                               
+                             (Premier League)', 'Ethan                          
+                             Nwaneri (Premier League)',                         
+                             'Martin Odegaard (Premier                          
+                             League)', 'Max Dowman                              
+                             (Premier League)', 'Myles                          
+                             Lewis-Skelly (Premier                              
+                             League)', 'Noni Madueke                            
+                             (Premier League)', 'Viktor                         
+                             Gyokeres (Premier League)',                        
+                             'Alysson Edward (Premier                           
+                             League)', 'Andrés García                           
+                             (Premier League)',                                 
+                             'Boubacar Kamara (Premier                          
+                             League)']                                          
+                    INFO                                 ingest_understat.py:511
+                               Şut koordinatları                                
+                             yükleniyor…                                        
+                    INFO                                 ingest_understat.py:315
+                               ── Premier League 2025                           
+                             şutlar ──                                          
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[06/06/26 18:13:28] INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+                    INFO       380 maç için şut          ingest_understat.py:289
+                             çekiliyor…                                         
+                    INFO       9524 şut çekildi.         ingest_understat.py:340
+[06/06/26 18:16:44] INFO                                 ingest_understat.py:315
+                               ── La Liga 2025 şutlar ──                        
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[06/06/26 18:16:45] INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+                    INFO       380 maç için şut          ingest_understat.py:289
+                             çekiliyor…                                         
+                    INFO       9523 şut çekildi.         ingest_understat.py:340
+[06/06/26 18:19:59] INFO                                 ingest_understat.py:315
+                               ── Bundesliga 2025 şutlar                        
+                             ──                                                 
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[06/06/26 18:20:00] INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+                    INFO       306 maç için şut          ingest_understat.py:289
+                             çekiliyor…                                         
+                    INFO       8124 şut çekildi.         ingest_understat.py:340
+[06/06/26 18:22:45] INFO                                 ingest_understat.py:315
+                               ── Ligue 1 2025 şutlar ──                        
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[06/06/26 18:22:46] INFO       305 maç için şut          ingest_understat.py:289
+                             çekiliyor…                                         
+                    INFO       7613 şut çekildi.         ingest_understat.py:340
+[06/06/26 18:25:19] INFO                                 ingest_understat.py:315
+                               ── Serie A 2025 şutlar ──                        
+                    INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+[06/06/26 18:25:20] INFO     Saving cached data to                _common.py:250
+                             /Users/lara/soccerdata/data/Understa               
+                             t                                                  
+                    INFO       380 maç için şut          ingest_understat.py:289
+                             çekiliyor…                                         
+                    INFO       9373 şut çekildi.         ingest_understat.py:340
+[06/06/26 18:28:25] INFO                                 ingest_understat.py:431
+                               ── Şut Özeti ──                                  
+                    INFO       İşlendi: 44157, Eklendi:  ingest_understat.py:432
+                             19972, Atıldı: 24185                               
