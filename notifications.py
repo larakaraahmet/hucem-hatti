@@ -36,14 +36,14 @@ def notify_player_view(player_id: int, isim: str, mevki: str | None, milliyet: s
     if now - player_notifs.get(player_id, 0) > 60:
         player_notifs[player_id] = now
         detay = " | ".join(filter(None, [mevki, milliyet]))
-        ntfy(f"😔 {isim}", detay if detay else "profil açıldı")
+        ntfy(f"⚽ {isim}", detay if detay else "profil açıldı")
 
 
 def notify_search(q: str) -> None:
     if q and q.lower() != "ping" and q != _state["last_notif_search"]:
         _state["last_notif_search"] = q
-        ntfy("😔 arama", f'"{q}"')
+        ntfy("🔍 arama", f'"{q}"')
 
 
 def notify_visit() -> None:
-    ntfy("😔 ziyaret", "biri siteye girdi")
+    ntfy("👀 ziyaret", "biri siteye girdi")
