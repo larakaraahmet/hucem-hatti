@@ -2020,7 +2020,7 @@ const S = {
     gridTemplateColumns:"repeat(auto-fill, minmax(125px, 1fr))",
     gap:10, marginTop:12,
   },
-  teamName:  { color:"#eef2f7", fontSize:11, fontWeight:700, textAlign:"center", lineHeight:1.3 },
+  teamName:  { color:"var(--text)", fontSize:11, fontWeight:700, textAlign:"center", lineHeight:1.3 },
   teamCount: { fontSize:9, fontWeight:600, color:"rgba(255,255,255,.4)", letterSpacing:".04em" },
 
   // Team page

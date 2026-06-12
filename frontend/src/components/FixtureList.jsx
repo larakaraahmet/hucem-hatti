@@ -307,9 +307,10 @@ export default function FixtureList({ onTeamClick }) {
             {matches.map((f, i) => {
               const gc      = GRP_COLOR[f.grup] ?? "#38bdf8";
               const time    = (f.tarih_tr || "").split(" ")[1] ?? "";
-              // Biten maç: durum "programlı"/"TIMED" değilse VEYA skor girilmişse
-              const hasScore  = f.ev_gol !== null && f.ev_gol !== undefined && f.dep_gol !== null && f.dep_gol !== undefined;
-              const played    = hasScore || (f.durum && f.durum !== "programlı" && f.durum !== "TIMED" && f.durum !== "");
+              // Biten maç: tarih geçmiş VE skor girilmiş (0-0 valid skor için tarih şartı lazım)
+              const datePassed = f.tarih_utc && (new Date(f.tarih_utc) < now);
+              const hasScore   = datePassed && f.ev_gol !== null && f.ev_gol !== undefined && f.dep_gol !== null && f.dep_gol !== undefined;
+              const played     = hasScore || (f.durum && f.durum !== "programlı" && f.durum !== "TIMED" && f.durum !== "");
               const cdStr     = !played ? countdownStr(f.tarih_utc, now) : null;
               const h2hKey    = `${f.ev_takim}|${f.dep_takim}`;
               const h2hOpen   = openH2H === h2hKey;
