@@ -358,20 +358,22 @@ export default function FixtureList({ onTeamClick }) {
                     >
                       {played ? (
                         <span style={{
-                          fontSize:16, fontWeight:900, color:"#0f172a",
-                          background:"#f1f5f9", padding:"3px 10px", borderRadius:6,
+                          fontSize:16, fontWeight:900, color:"var(--text)",
+                          background:"var(--surface-2)", padding:"3px 10px", borderRadius:6,
+                          border:"1px solid var(--border)",
                         }}>
                           {f.ev_gol} – {f.dep_gol}
                         </span>
                       ) : (
-                        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:1 }}>
-                          <span style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>
+                        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+                          <span style={{ fontSize:12, fontWeight:800, color:"var(--text)" }}>
                             {time || "–:–"}
                           </span>
                           {cdStr && (
                             <span style={{
-                              fontSize:9, fontWeight:700, color:"#f59e0b",
-                              background:"#fef3c7", padding:"1px 5px", borderRadius:4,
+                              fontSize:10, fontWeight:700, color:"var(--gold)",
+                              background:"rgba(245,166,35,.12)", padding:"2px 6px", borderRadius:4,
+                              border:"1px solid rgba(245,166,35,.25)",
                             }}>⏱ {cdStr}</span>
                           )}
                           {isLive && (

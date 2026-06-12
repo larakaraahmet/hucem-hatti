@@ -2049,8 +2049,8 @@ const S = {
     gridTemplateColumns:"repeat(auto-fill, minmax(220px,1fr))",
     gap:8,
   },
-  playerCardName: { color:"#eef2f7", fontSize:13, fontWeight:600 },
-  playerCardPos:  { fontSize:11, color:"#7a9bb8" },
+  playerCardName: { color:"var(--text)", fontSize:13, fontWeight:700 },
+  playerCardPos:  { fontSize:11, color:"var(--text-2)" },
   playerCardInner: { display:"flex", alignItems:"center", gap:10, width:"100%" },
 
   // Player hero
