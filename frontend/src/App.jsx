@@ -849,7 +849,7 @@ function TeamPage({ ulke, onPlayerSelect, onBack }) {
         <span style={{ fontSize:46, lineHeight:1 }}>{flag(ulke)}</span>
         <div style={{ flex:1 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
-            <span style={{ fontSize:24, fontWeight:900, color:"#0f172a" }}>{ulke}</span>
+            <span style={{ fontSize:24, fontWeight:900, color:"#eef2f7" }}>{ulke}</span>
             <span style={{ background:confColor+"22", border:`1px solid ${confColor}44`, color:confColor, fontSize:10, fontWeight:800, padding:"2px 10px", borderRadius:6 }}>
               {CONF_META[confKey]?.label}
             </span>
@@ -859,16 +859,16 @@ function TeamPage({ ulke, onPlayerSelect, onBack }) {
           {summary && (
             <div style={{
               display:"flex", flexWrap:"wrap", gap:12, marginTop:10,
-              fontSize:11, color:"#64748b",
+              fontSize:11, color:"#7a9bb8",
             }}>
               {summary.ort_yas != null && (
-                <span>📅 Ort. Yaş: <strong style={{ color:"#0f172a" }}>{summary.ort_yas}</strong></span>
+                <span>📅 Ort. Yaş: <strong style={{ color:"#eef2f7" }}>{summary.ort_yas}</strong></span>
               )}
-              <span>🏟️ Maç: <strong style={{ color:"#0f172a" }}>{summary.mac_sayisi}</strong></span>
-              <span>⚽ Gol: <strong style={{ color:"#0f172a" }}>{summary.toplam_gol}</strong></span>
-              <span>📐 xG: <strong style={{ color:"#0f172a" }}>{Number(summary.toplam_xg).toFixed(1)}</strong></span>
+              <span>🏟️ Maç: <strong style={{ color:"#eef2f7" }}>{summary.mac_sayisi}</strong></span>
+              <span>⚽ Gol: <strong style={{ color:"#eef2f7" }}>{summary.toplam_gol}</strong></span>
+              <span>📐 xG: <strong style={{ color:"#eef2f7" }}>{Number(summary.toplam_xg).toFixed(1)}</strong></span>
               {summary.en_iyi_oyuncu && (
-                <span>⭐ En İyi: <strong style={{ color:"#d97706" }}>{summary.en_iyi_oyuncu}</strong></span>
+                <span>⭐ En İyi: <strong style={{ color:"#f5a623" }}>{summary.en_iyi_oyuncu}</strong></span>
               )}
             </div>
           )}
