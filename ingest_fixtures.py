@@ -458,6 +458,74 @@ def fetch_club_fixtures(lig_kodu: str, engine) -> None:
     log.info(f"  ✓ {ok} fikstür kaydedildi.")
 
 
+def sync_wc2026_scores(engine) -> None:
+    """
+    football-data.org'dan WC2026 biten maç skorlarını çekip fixtures tablosunu güncelle.
+    Takım adı yerine maç tarihine göre eşleştirme yapar (TR/EN isim farkı sorun değil).
+    """
+    if not FOOTBALL_DATA_API_KEY:
+        log.error("  FOOTBALL_DATA_API_KEY bulunamadı.")
+        log.info("  Ücretsiz API key: https://www.football-data.org/client/register")
+        log.info("  Sonra: export FOOTBALL_DATA_API_KEY=<key>  veya .env dosyasına ekle")
+        return
+
+    headers = {"X-Auth-Token": FOOTBALL_DATA_API_KEY, "Content-Type": "application/json"}
+    url = f"{FOOTBALL_DATA_ORG_BASE}/competitions/WC/matches"
+    log.info("  football-data.org WC2026 skorları çekiliyor…")
+
+    try:
+        time.sleep(1.0)
+        r = requests.get(url, headers=headers, timeout=20, params={"status": "FINISHED"})
+        r.raise_for_status()
+        matches = r.json().get("matches", [])
+    except requests.RequestException as e:
+        log.error(f"  API hatası: {e}")
+        return
+
+    log.info(f"  {len(matches)} biten maç bulundu.")
+    ok = skip = 0
+
+    with engine.begin() as conn:
+        for m in matches:
+            score = m.get("score", {}).get("fullTime", {})
+            ev_gol  = score.get("home")
+            dep_gol = score.get("away")
+            if ev_gol is None or dep_gol is None:
+                skip += 1
+                continue
+
+            tarih_str = m.get("utcDate", "")
+            if not tarih_str:
+                skip += 1
+                continue
+            tarih_utc = datetime.fromisoformat(tarih_str.replace("Z", "+00:00"))
+
+            # Tarihe göre eşleştir (±90 dk tolerans) — isim farkı sorun değil
+            row = conn.execute(text("""
+                SELECT id, ev_takim, dep_takim
+                FROM fixtures
+                WHERE ABS(EXTRACT(EPOCH FROM (tarih_utc - :tarih))) < 5400
+                  AND (turnuva ILIKE '%dünya%' OR turnuva ILIKE '%world%' OR turnuva ILIKE '%copa%')
+                ORDER BY ABS(EXTRACT(EPOCH FROM (tarih_utc - :tarih)))
+                LIMIT 1
+            """), {"tarih": tarih_utc}).fetchone()
+
+            if row:
+                conn.execute(text("""
+                    UPDATE fixtures
+                    SET ev_gol = :ev_gol, dep_gol = :dep_gol,
+                        durum = 'oynandı', guncelleme = NOW()
+                    WHERE id = :id
+                """), {"id": row.id, "ev_gol": ev_gol, "dep_gol": dep_gol})
+                log.info(f"  ✓ {row.ev_takim} {ev_gol}–{dep_gol} {row.dep_takim}")
+                ok += 1
+            else:
+                log.debug(f"  ? Eşleşme yok: {tarih_utc} {m.get('homeTeam',{}).get('name')} vs {m.get('awayTeam',{}).get('name')}")
+                skip += 1
+
+    log.info(f"  ✓ {ok} maç güncellendi, {skip} atlandı.")
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # CLI
 # ──────────────────────────────────────────────────────────────────────────────
@@ -465,6 +533,7 @@ def fetch_club_fixtures(lig_kodu: str, engine) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fikstür takvimi yönetimi")
     parser.add_argument("--wc2026",          action="store_true", help="WC2026 fikstürlerini yükle")
+    parser.add_argument("--wc-skorlar",      action="store_true", help="WC2026 biten maç skorlarını football-data.org'dan çek")
     parser.add_argument("--guncelle-durumlar", action="store_true", help="Geçmiş maçları güncelle")
     parser.add_argument("--kulup-ligi",      type=str, metavar="KOD", help="Kulüp ligi fikstürü (ör. PL, PD)")
     parser.add_argument("--liste-stadyumlar", action="store_true", help="Stadyum listesi")
@@ -496,6 +565,9 @@ def main() -> None:
 
     if args.kulup_ligi:
         fetch_club_fixtures(args.kulup_ligi, engine)
+
+    if args.wc_skorlar:
+        sync_wc2026_scores(engine)
 
     if args.skor:
         fixture_id, ev_gol, dep_gol = args.skor
