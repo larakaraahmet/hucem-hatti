@@ -1681,7 +1681,6 @@ export default function App() {
               <NavLink to="/simulate">🎮 Simülatör</NavLink>
               <NavLink to="/grup-sim">🌍 Gruplar</NavLink>
               <NavLink to="/taktik-dna">🧬 DNA</NavLink>
-              <NavLink to="/quiz">🕵️ Kim Bu?</NavLink>
               <NavLink to="/compare">⚖️ Karşılaştır</NavLink>
               <NavLink to="/favoriler">⭐ Favoriler{favorites.length > 0 && ` (${favorites.length})`}</NavLink>
             </div>
@@ -1775,7 +1774,6 @@ export default function App() {
               <NavLink to="/simulate" onClick={() => setMobileMenuOpen(false)}>🎮 Simülatör</NavLink>
               <NavLink to="/grup-sim" onClick={() => setMobileMenuOpen(false)}>🌍 Grup Sim.</NavLink>
               <NavLink to="/taktik-dna" onClick={() => setMobileMenuOpen(false)}>🧬 DNA</NavLink>
-              <NavLink to="/quiz" onClick={() => setMobileMenuOpen(false)}>🕵️ Kim Bu?</NavLink>
               <NavLink to="/compare" onClick={() => setMobileMenuOpen(false)}>⚖️ Karşılaştır</NavLink>
               <NavLink to="/favoriler" onClick={() => setMobileMenuOpen(false)}>⭐ Favoriler</NavLink>
             </div>
@@ -1868,7 +1866,6 @@ function MobileBottomNav({ favorites }) {
     { to:"/simulate",  label:"Simülatör", icon:"🎮" },
     { to:"/grup-sim",  label:"Gruplar",   icon:"🌍" },
     { to:"/taktik-dna",label:"DNA",       icon:"🧬" },
-    { to:"/quiz",      label:"Kim Bu?",   icon:"🕵️" },
     { to:"/favoriler", label:"Favoriler", icon:"⭐", badge: favorites.length || 0 },
   ];
   return (
