@@ -18,6 +18,9 @@ export default defineConfig({
       "/matches":  "http://localhost:8000",
       "/h2h":  "http://localhost:8000",
       "/auth": "http://localhost:8000",
+      "/group-simulate":  "http://localhost:8000",
+      "/tactical-dna":   "http://localhost:8000",
+      "/player-extras":  "http://localhost:8000",
       "/simulate": {
         target: "http://localhost:8000",
         bypass(req) {

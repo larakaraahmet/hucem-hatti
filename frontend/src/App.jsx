@@ -6,9 +6,12 @@ import { useEffect, useState, useRef } from "react";
 import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
 import { usePlayerPhoto } from "./hooks/usePlayerPhoto.js";
 import { usePlayer, usePlayerCompetitions, usePlayerArchetype, usePlayerMarket, usePlayerXgTrend, useTeams, useTeamPlayers, useTeamSummary, useStatsLeaders } from "./hooks/useApi.js";
-import ComparePage   from "./pages/ComparePage.jsx";
-import LeadersPage   from "./pages/LeadersPage.jsx";
-import SimulatePage  from "./pages/SimulatePage.jsx";
+import ComparePage      from "./pages/ComparePage.jsx";
+import LeadersPage      from "./pages/LeadersPage.jsx";
+import SimulatePage     from "./pages/SimulatePage.jsx";
+import GroupSimPage     from "./pages/GroupSimPage.jsx";
+import TacticalDnaPage  from "./pages/TacticalDnaPage.jsx";
+import QuizPage         from "./pages/QuizPage.jsx";
 import RadarChart       from "./components/RadarChart.jsx";
 import PlayerMatches    from "./components/PlayerMatches.jsx";
 import XGTimeline       from "./components/XGTimeline.jsx";
@@ -18,6 +21,8 @@ import GoalTiming       from "./components/GoalTiming.jsx";
 import ContribTimeline  from "./components/ContribTimeline.jsx";
 import PitchView        from "./components/PitchView.jsx";
 import ShotQuality      from "./components/ShotQuality.jsx";
+import CareerArc        from "./components/CareerArc.jsx";
+import FormScore        from "./components/FormScore.jsx";
 import CompetitionStats  from "./components/CompetitionStats.jsx";
 import GoalkeeperStats  from "./components/GoalkeeperStats.jsx";
 import FormStrip        from "./components/FormStrip.jsx";
@@ -1213,6 +1218,8 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
           )}
           {/* ── Mini Form Şeridi (son 5 maç) ── */}
           <MiniFormStrip playerId={playerId} />
+          {/* ── Form Skoru ── */}
+          <FormScore playerId={playerId} />
         </div>
       </div>
 
@@ -1423,6 +1430,9 @@ function PlayerPage({ playerId, playerName, onBack, toggleFav, isFav }) {
           <section style={S.cell}><FormStrip        playerId={playerId} competition={competition} /></section>
           <section style={S.cell}><BettingPanel     playerId={playerId} competition={competition} /></section>
         </div>
+
+        {/* Kariyer Yayı */}
+        <CareerArc playerId={playerId} />
 
         {/* WC 2026 Tahmin */}
         {p90 && (
@@ -1669,6 +1679,9 @@ export default function App() {
               <NavLink to="/" exact onClick={() => { setPage("teams"); setSelTeam(null); }}>🏠 Takımlar</NavLink>
               <NavLink to="/leaders">🏆 Liderler</NavLink>
               <NavLink to="/simulate">🎮 Simülatör</NavLink>
+              <NavLink to="/grup-sim">🌍 Gruplar</NavLink>
+              <NavLink to="/taktik-dna">🧬 DNA</NavLink>
+              <NavLink to="/quiz">🕵️ Kim Bu?</NavLink>
               <NavLink to="/compare">⚖️ Karşılaştır</NavLink>
               <NavLink to="/favoriler">⭐ Favoriler{favorites.length > 0 && ` (${favorites.length})`}</NavLink>
             </div>
@@ -1760,6 +1773,9 @@ export default function App() {
               <NavLink to="/" exact onClick={() => { setPage("teams"); setSelTeam(null); setMobileMenuOpen(false); }}>🏠 Takımlar</NavLink>
               <NavLink to="/leaders" onClick={() => setMobileMenuOpen(false)}>🏆 Liderler</NavLink>
               <NavLink to="/simulate" onClick={() => setMobileMenuOpen(false)}>🎮 Simülatör</NavLink>
+              <NavLink to="/grup-sim" onClick={() => setMobileMenuOpen(false)}>🌍 Grup Sim.</NavLink>
+              <NavLink to="/taktik-dna" onClick={() => setMobileMenuOpen(false)}>🧬 DNA</NavLink>
+              <NavLink to="/quiz" onClick={() => setMobileMenuOpen(false)}>🕵️ Kim Bu?</NavLink>
               <NavLink to="/compare" onClick={() => setMobileMenuOpen(false)}>⚖️ Karşılaştır</NavLink>
               <NavLink to="/favoriler" onClick={() => setMobileMenuOpen(false)}>⭐ Favoriler</NavLink>
             </div>
@@ -1769,8 +1785,11 @@ export default function App() {
         {/* ── İÇERİK ── */}
         <main className="hh-main" style={{ ...S.main, paddingBottom: "max(80px, env(safe-area-inset-bottom, 80px))" }}>
           <Routes>
-            <Route path="/simulate" element={<SimulatePage />} />
-            <Route path="/compare" element={<ComparePage />} />
+            <Route path="/simulate"   element={<SimulatePage />} />
+            <Route path="/grup-sim"   element={<GroupSimPage />} />
+            <Route path="/taktik-dna" element={<TacticalDnaPage />} />
+            <Route path="/quiz"       element={<QuizPage />} />
+            <Route path="/compare"    element={<ComparePage />} />
             <Route path="/leaders" element={
               <LeadersPage onPlayerSelect={(id, name) => goPlayer(id, name)} />
             } />
@@ -1847,7 +1866,9 @@ function MobileBottomNav({ favorites }) {
   const tabs = [
     { to:"/",          label:"Takımlar",  icon:"🏠" },
     { to:"/simulate",  label:"Simülatör", icon:"🎮" },
-    { to:"/compare",   label:"Karşılaştır",icon:"⚖️" },
+    { to:"/grup-sim",  label:"Gruplar",   icon:"🌍" },
+    { to:"/taktik-dna",label:"DNA",       icon:"🧬" },
+    { to:"/quiz",      label:"Kim Bu?",   icon:"🕵️" },
     { to:"/favoriler", label:"Favoriler", icon:"⭐", badge: favorites.length || 0 },
   ];
   return (
