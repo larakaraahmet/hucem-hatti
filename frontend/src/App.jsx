@@ -1904,10 +1904,7 @@ function NavLink({ to, children, onClick }) {
     <Link
       to={to}
       onClick={onClick}
-      style={{
-        ...S.navLink,
-        ...(isActive ? S.navLinkActive : {}),
-      }}
+      className={`hh-nav-link${isActive ? " active" : ""}`}
     >
       {children}
     </Link>
@@ -1916,189 +1913,208 @@ function NavLink({ to, children, onClick }) {
 
 // ─── Stiller ──────────────────────────────────────────────────────────────────
 const S = {
-  // Header — kompakt yatay navbar
+  // Header — CSS class kullanıyor (globals.css .hh-header)
   header: {
     position:"sticky", top:0, zIndex:50,
-    background:"rgba(15,23,42,.97)",
-    backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
-    borderBottom:"1px solid rgba(255,255,255,.06)",
-    boxShadow:"0 2px 20px rgba(0,0,0,.25)",
+    background:"linear-gradient(180deg, rgba(7,17,31,1) 0%, rgba(11,25,41,.97) 100%)",
+    backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)",
+    borderBottom:"1px solid rgba(255,255,255,.07)",
+    boxShadow:"0 1px 0 rgba(255,255,255,.03), 0 4px 24px rgba(0,0,0,.3)",
   },
   headerStripe: {
-    height:3,
-    background:"linear-gradient(90deg, transparent 0%, #22c55e 15%, #22c55e 85%, transparent 100%)",
-    opacity:.8,
+    height:2,
+    background:"linear-gradient(90deg, transparent 0%, #00d65c 20%, #f5a623 50%, #00d65c 80%, transparent 100%)",
+    opacity:.7,
   },
   headerRow: {
     display:"flex", alignItems:"center", gap:16,
     padding:"10px 24px 12px",
   },
   logo: {
-    fontSize:"clamp(18px,2.5vw,26px)", fontWeight:900, letterSpacing:-0.5,
+    fontSize:"clamp(18px,2.5vw,24px)", fontWeight:900, letterSpacing:-0.5,
     display:"inline-block",
   },
 
-  // Nav links
+  // Nav links (CSS class .hh-nav-link kullanılıyor)
   navRow: {
-    display:"flex", gap:6, flex:1, justifyContent:"center",
+    display:"flex", gap:4, flex:1, justifyContent:"center",
   },
   navLink: {
     textDecoration:"none",
-    background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.1)",
-    borderRadius:20, color:"rgba(255,255,255,.65)",
-    fontSize:11, fontWeight:600, padding:"5px 14px",
+    background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.07)",
+    borderRadius:8, color:"rgba(255,255,255,.5)",
+    fontSize:11, fontWeight:600, padding:"5px 12px",
+    letterSpacing:".02em",
     transition:"all .15s",
   },
   navLinkActive: {
-    background:"rgba(245,158,11,.15)", border:"1px solid rgba(245,158,11,.35)",
-    color:"#f59e0b",
+    background:"rgba(245,166,35,.12)", border:"1px solid rgba(245,166,35,.28)",
+    color:"#f5a623",
+    boxShadow:"0 0 12px rgba(245,166,35,.15)",
   },
 
   // Main
-  main: { maxWidth:1200, margin:"0 auto", padding:"32px 24px 80px" },
+  main: { maxWidth:1200, margin:"0 auto", padding:"28px 24px 80px" },
 
   // Autocomplete
-  acWrap:   { position:"relative", width:"min(400px,92vw)" },
+  acWrap: { position:"relative", width:"min(380px,92vw)" },
   searchBox: {
     display:"flex", alignItems:"center",
-    background:"var(--surface)", border:"1px solid var(--border)",
+    background:"rgba(255,255,255,.07)",
+    border:"1px solid rgba(255,255,255,.1)",
     borderRadius:10, overflow:"hidden",
     transition:"border-color .2s, box-shadow .2s",
-    boxShadow:"0 1px 3px rgba(0,0,0,.06)",
+    boxShadow:"inset 0 1px 0 rgba(255,255,255,.04)",
   },
-  searchIcon:  { padding:"0 12px", fontSize:14, color:"#94a3b8", flexShrink:0 },
+  searchIcon:  { padding:"0 12px", fontSize:14, color:"rgba(255,255,255,.3)", flexShrink:0 },
   searchInput: {
     flex:1, background:"transparent", border:"none",
-    color:"var(--text)", fontSize:14, padding:"11px 14px 11px 0",
+    color:"var(--text)", fontSize:13, padding:"9px 12px 9px 0",
     outline:"none",
   },
   dropdown: {
     position:"absolute", top:"calc(100% + 6px)", left:0, right:0,
-    background:"var(--surface)", border:"1px solid var(--border)",
-    borderRadius:10, listStyle:"none", padding:"6px 0",
-    zIndex:200, maxHeight:290, overflowY:"auto",
-    boxShadow:"0 10px 40px rgba(0,0,0,.12)",
+    background:"#162840",
+    border:"1px solid rgba(255,255,255,.12)",
+    borderRadius:12, listStyle:"none", padding:"6px 0",
+    zIndex:200, maxHeight:300, overflowY:"auto",
+    boxShadow:"0 16px 48px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04)",
   },
-  ddItem: { display:"flex", alignItems:"center", gap:8, padding:"9px 16px", cursor:"pointer" },
-  ddName: { color:"var(--text)", fontSize:13, flexGrow:1 },
+  ddItem: {
+    display:"flex", alignItems:"center", gap:8,
+    padding:"9px 14px", cursor:"pointer",
+    transition:"background .1s",
+  },
+  ddName: { color:"#eef2f7", fontSize:13, flexGrow:1, fontWeight:500 },
   ddMeta: {
-    color:"var(--sub)", fontSize:11,
-    background:"var(--bg)", borderRadius:4, padding:"1px 7px",
+    color:"#7a9bb8", fontSize:10, fontWeight:600,
+    background:"rgba(255,255,255,.06)",
+    borderRadius:4, padding:"2px 7px",
   },
 
-  // WC2026 banner
+  // WC2026 banner — now using .hh-wc-banner class in CSS, but also inline
   wcBanner: {
     display:"flex", alignItems:"center", gap:20, flexWrap:"wrap",
-    padding:"18px 24px", marginBottom:28,
-    background:"var(--surface)",
-    border:"1px solid var(--border)",
+    padding:"20px 24px", marginBottom:28,
+    background:"linear-gradient(135deg, #0a2515 0%, #0b1929 60%, #0a1520 100%)",
+    border:"1px solid rgba(0,214,92,.15)",
     borderRadius:16, position:"relative", overflow:"hidden",
-    boxShadow:"0 1px 3px rgba(0,0,0,.06)",
+    boxShadow:"0 4px 24px rgba(0,0,0,.3)",
   },
   wcBannerGlow: {
-    position:"absolute", top:0, left:0, right:0, height:3,
-    background:"linear-gradient(90deg, #f59e0b, #38bdf8)",
-    opacity:.9,
+    position:"absolute", top:0, left:0, right:0, height:2,
+    background:"linear-gradient(90deg, transparent, #00d65c, #f5a623, #00d65c, transparent)",
+    opacity:.6,
   },
-  wcBannerText: { flex:1, display:"flex", flexDirection:"column", gap:4 },
-  wcBannerTitle:{ fontSize:"clamp(18px,3vw,26px)", fontWeight:900, color:"var(--text)", letterSpacing:"-.3px" },
-  wcBannerSub:  { color:"var(--sub)", fontSize:11, fontWeight:500, letterSpacing:".03em" },
+  wcBannerText: { flex:1, display:"flex", flexDirection:"column", gap:5 },
+  wcBannerTitle:{ fontSize:"clamp(16px,3vw,24px)", fontWeight:900, color:"#eef2f7", letterSpacing:"-.3px" },
+  wcBannerSub:  { color:"#7a9bb8", fontSize:11, fontWeight:500, letterSpacing:".04em", textTransform:"uppercase" },
   wcBannerBadge:{
     display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-    width:54, height:54, borderRadius:12, flexShrink:0,
-    background:"#fef3c7", border:"1px solid #fde68a",
-    color:"#d97706", fontSize:22, fontWeight:900, lineHeight:1, gap:1,
+    width:52, height:52, borderRadius:12, flexShrink:0,
+    background:"rgba(245,166,35,.12)", border:"1px solid rgba(245,166,35,.25)",
+    color:"#f5a623", fontSize:22, fontWeight:900, lineHeight:1,
+    boxShadow:"0 0 16px rgba(245,166,35,.2)",
   },
 
   // Teams grid
   teamsGrid: {
     display:"grid",
-    gridTemplateColumns:"repeat(auto-fill, minmax(130px, 1fr))",
-    gap:10, marginTop:10,
+    gridTemplateColumns:"repeat(auto-fill, minmax(125px, 1fr))",
+    gap:10, marginTop:12,
   },
-  teamName:  { color:"var(--text)", fontSize:11, fontWeight:700, textAlign:"center", lineHeight:1.3 },
-  teamCount: { fontSize:9, fontWeight:600 },
+  teamName:  { color:"#eef2f7", fontSize:11, fontWeight:700, textAlign:"center", lineHeight:1.3 },
+  teamCount: { fontSize:9, fontWeight:600, color:"rgba(255,255,255,.4)", letterSpacing:".04em" },
 
   // Team page
   teamHeadCard: {
-    display:"flex", alignItems:"center", gap:18,
-    padding:"20px 24px", marginBottom:24,
-    background:"var(--surface)", borderRadius:16,
-    border:"1px solid var(--border)",
+    display:"flex", alignItems:"center", gap:20,
+    padding:"22px 26px", marginBottom:24,
+    background:"linear-gradient(160deg, #162840 0%, #0f2035 100%)",
+    borderRadius:16,
+    border:"1px solid rgba(255,255,255,.08)",
     position:"relative", overflow:"hidden",
-    boxShadow:"0 1px 4px rgba(0,0,0,.06)",
+    boxShadow:"0 4px 24px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.05)",
   },
   backBtn: {
-    background:"var(--surface)", border:"1px solid var(--border)",
-    borderRadius:8, color:"#64748b", cursor:"pointer",
-    fontSize:13, padding:"7px 16px", marginBottom:20,
+    background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.1)",
+    borderRadius:8, color:"#7a9bb8", cursor:"pointer",
+    fontSize:12, fontWeight:600, padding:"7px 16px", marginBottom:20,
     transition:"all .15s",
-    boxShadow:"0 1px 2px rgba(0,0,0,.04)",
+    letterSpacing:".02em",
   },
   countBadge: {
-    background:"#fef3c7", border:"1px solid #fde68a",
-    borderRadius:6, color:"#d97706", fontSize:11, fontWeight:700, padding:"3px 12px",
+    background:"rgba(245,166,35,.12)", border:"1px solid rgba(245,166,35,.25)",
+    borderRadius:6, color:"#f5a623", fontSize:11, fontWeight:700, padding:"3px 12px",
   },
   playersGrid: {
     display:"grid",
     gridTemplateColumns:"repeat(auto-fill, minmax(220px,1fr))",
     gap:8,
   },
-  playerCardName: { color:"var(--text)", fontSize:13, fontWeight:600 },
-  playerCardPos:  { fontSize:11 },
+  playerCardName: { color:"#eef2f7", fontSize:13, fontWeight:600 },
+  playerCardPos:  { fontSize:11, color:"#7a9bb8" },
   playerCardInner: { display:"flex", alignItems:"center", gap:10, width:"100%" },
 
   // Player hero
   heroCard: {
     display:"flex", alignItems:"flex-start", gap:22,
-    padding:"22px 24px", marginBottom:22, flexWrap:"wrap",
-    background:"var(--surface)",
-    border:"1px solid var(--border)",
+    padding:"22px 26px", marginBottom:22, flexWrap:"wrap",
+    background:"linear-gradient(160deg, #162840 0%, #0f2035 100%)",
+    border:"1px solid rgba(255,255,255,.08)",
     borderRadius:16, position:"relative", overflow:"hidden",
-    boxShadow:"0 1px 4px rgba(0,0,0,.06)",
+    boxShadow:"0 4px 32px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06)",
   },
   heroGlow: {
-    position:"absolute", top:0, left:0, right:0, height:3,
-    background:"linear-gradient(90deg, #f59e0b 0%, #38bdf8 100%)",
-    pointerEvents:"none",
+    position:"absolute", top:0, left:0, right:0, height:2,
+    background:"linear-gradient(90deg, transparent, #f5a623 30%, #00d65c 70%, transparent)",
+    pointerEvents:"none", opacity:.8,
   },
   heroPhoto: {
     width:96, height:96, borderRadius:14, flexShrink:0,
     objectFit:"cover", objectPosition:"top center",
-    border:"2px solid #e2e8f0",
-    boxShadow:"0 2px 8px rgba(0,0,0,.1)",
+    border:"2px solid rgba(255,255,255,.12)",
+    boxShadow:"0 4px 16px rgba(0,0,0,.4)",
   },
   heroNameRow: { display:"flex", alignItems:"center", gap:12, marginBottom:8, justifyContent:"space-between" },
-  heroName: { fontSize:22, fontWeight:900, color:"var(--text)" },
-  badgesRow: { display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 },
+  heroName: { fontSize:22, fontWeight:900, color:"#eef2f7", letterSpacing:"-.3px" },
+  badgesRow: { display:"flex", flexWrap:"wrap", gap:6, marginBottom:16 },
   badgeGold: {
-    background:"#fef3c7", border:"1px solid #fde68a",
-    borderRadius:6, color:"#d97706", fontSize:11, fontWeight:700, padding:"3px 10px",
+    background:"rgba(245,166,35,.12)", border:"1px solid rgba(245,166,35,.25)",
+    borderRadius:6, color:"#f5a623", fontSize:11, fontWeight:700, padding:"3px 10px",
   },
   badgeBlue: {
-    background:"#e0f2fe", border:"1px solid #bae6fd",
-    borderRadius:6, color:"#0284c7", fontSize:11, fontWeight:700, padding:"3px 10px",
+    background:"rgba(56,178,255,.12)", border:"1px solid rgba(56,178,255,.25)",
+    borderRadius:6, color:"#38b2ff", fontSize:11, fontWeight:700, padding:"3px 10px",
   },
   badgeGray: {
-    background:"#f8fafc", border:"1px solid #e2e8f0",
-    borderRadius:6, color:"#64748b", fontSize:11, fontWeight:600, padding:"3px 10px",
+    background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)",
+    borderRadius:6, color:"#7a9bb8", fontSize:11, fontWeight:600, padding:"3px 10px",
   },
   badgeClub: {
-    background:"#f0fdf4", border:"1px solid #bbf7d0",
-    borderRadius:6, color:"#166534", fontSize:11, fontWeight:700, padding:"3px 10px",
+    background:"rgba(0,214,92,.1)", border:"1px solid rgba(0,214,92,.22)",
+    borderRadius:6, color:"#00d65c", fontSize:11, fontWeight:700, padding:"3px 10px",
   },
-  statsRow:  { display:"flex", gap:20, flexWrap:"wrap" },
-  statItem:  { display:"flex", flexDirection:"column", gap:3 },
-  statVal:   { fontSize:20, fontWeight:900, color:"#f59e0b", lineHeight:1 },
-  statLbl:   { color:"#94a3b8", fontSize:10, fontWeight:700, letterSpacing:".08em", textTransform:"uppercase" },
+  statsRow: { display:"flex", gap:12, flexWrap:"wrap" },
+  statItem: {
+    display:"flex", flexDirection:"column", alignItems:"center", gap:2,
+    padding:"10px 14px", borderRadius:10,
+    background:"rgba(255,255,255,.05)",
+    border:"1px solid rgba(255,255,255,.07)",
+    minWidth:62, textAlign:"center",
+  },
+  statVal: { fontSize:20, fontWeight:900, color:"#f5a623", lineHeight:1 },
+  statLbl: { color:"#7a9bb8", fontSize:9, fontWeight:700, letterSpacing:".08em", textTransform:"uppercase" },
 
   // Section headers
   sectionHeader: {
-    display:"flex", alignItems:"center", gap:12,
+    display:"flex", alignItems:"center", gap:10,
     marginBottom:14, marginTop:4,
+    paddingBottom:10,
+    borderBottom:"1px solid rgba(255,255,255,.06)",
   },
-  sectionAccent: { width:3, height:20, borderRadius:2, flexShrink:0 },
-  sectionHeading:{ color:"#64748b", fontSize:11, fontWeight:800, letterSpacing:".12em", textTransform:"uppercase" },
+  sectionAccent: { width:3, height:18, borderRadius:99, flexShrink:0 },
+  sectionHeading:{ color:"#7a9bb8", fontSize:11, fontWeight:800, letterSpacing:".1em", textTransform:"uppercase" },
 
   // Full-width cell
   cell: { width:"100%", minWidth:0 },
@@ -2107,19 +2123,18 @@ const S = {
   compFilter: {
     display:"flex", flexWrap:"wrap", gap:6,
     padding:"12px 0 8px",
-    borderBottom:"1px solid #f1f5f9",
+    borderBottom:"1px solid rgba(255,255,255,.06)",
     marginBottom:14,
   },
   compChip: {
     display:"flex", alignItems:"center", gap:4,
-    background:"#ffffff", border:"1px solid #e2e8f0",
-    borderRadius:20, color:"#64748b", cursor:"pointer",
-    fontSize:11, fontWeight:600, padding:"5px 12px",
-    transition:"all .15s",
-    boxShadow:"0 1px 2px rgba(0,0,0,.04)",
+    background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.08)",
+    borderRadius:99, color:"#7a9bb8", cursor:"pointer",
+    fontSize:10, fontWeight:700, padding:"5px 12px",
+    transition:"all .15s", letterSpacing:".03em",
   },
   compChipActive: {
-    background:"#fef3c7", borderColor:"#fde68a",
-    color:"#d97706",
+    background:"rgba(245,166,35,.12)", borderColor:"rgba(245,166,35,.28)",
+    color:"#f5a623",
   },
 };
